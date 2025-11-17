@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    
+
     # Third party apps
     'allauth',
     'allauth.account',
@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',
     'oauth2_provider',
     'social_django',
-    
+
     # Local apps
     'prospecta',
 ]
@@ -68,10 +68,19 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'Outlook.urls'
 
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'cidaiprojeto@gmail.com'
+EMAIL_HOST_PASSWORD = 'yptj ibes awum stkm'
+DEFAULT_FROM_EMAIL = 'noreply@prospecta.com'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -162,6 +171,9 @@ AUTHENTICATION_BACKENDS = [
 # Django-allauth settings
 ACCOUNT_LOGIN_METHODS = {'email': True}
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
 SOCIALACCOUNT_EMAIL_REQUIRED = False
@@ -230,4 +242,3 @@ LOGGING = {
         },
     },
 }
-

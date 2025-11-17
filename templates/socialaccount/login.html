@@ -1,0 +1,70 @@
+{% extends "socialaccount/base.html" %}
+{% load socialaccount %}
+{% load i18n %}
+
+{% block title %}{% trans "Conectar Conta" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Conectar Conta Google" %}</h1>
+        <p class="mt-2 text-gray-600">
+            {% trans "Entrar ou criar conta com Google" %}
+        </p>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p class="text-blue-800">
+            <i class="fas fa-info-circle mr-2"></i>
+            {% if sociallogin.is_existing %}
+                {% trans "Você já tem uma conta PROSPECTA vinculada a este Google." %}
+            {% else %}
+                {% trans "Se você não tem conta, uma será criada automaticamente." %}
+            {% endif %}
+        </p>
+    </div>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="process" value="login" />
+        
+        <button 
+            type="submit" 
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition"
+        >
+            {% trans "Entrar ou Criar Conta com Google" %}
+        </button>
+    </form>
+
+    <div class="relative">
+        <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">{% trans "ou" %}</span>
+        </div>
+    </div>
+
+    <!-- Opções alternativas -->
+    <div class="space-y-3 text-center">
+        <div>
+            <a href="{% url 'account_login' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                {% trans "Entrar com Email/Senha" %}
+            </a>
+        </div>
+        <div>
+            <a href="{% url 'account_signup' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                {% trans "Criar nova conta" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Voltar -->
+    <div class="text-center text-sm">
+        <a href="{% url 'account_login' %}" class="text-gray-600 hover:text-gray-700">
+            ← {% trans "Voltar" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}

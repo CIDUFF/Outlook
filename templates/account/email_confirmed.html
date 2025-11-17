@@ -1,0 +1,28 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Confirmação de Email" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Verificar Email" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Seu email foi confirmado com sucesso!" %}</p>
+    </div>
+
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+        <p class="text-green-800">
+            <i class="fas fa-check-circle mr-2"></i>
+            {% trans "Obrigado por confirmar seu endereço de email." %}
+        </p>
+    </div>
+
+    <!-- Voltar -->
+    <div class="text-center text-sm">
+        <a href="{% url 'prospecta:dashboard' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+            {% trans "Ir para Dashboard" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}

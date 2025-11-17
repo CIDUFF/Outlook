@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PROSPECTA - Gestão de Oportunidades{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Container Principal -->
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="w-full max-w-md">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <a href="{% url 'prospecta:home' %}" class="inline-flex items-center justify-center">
+                    <i class="fas fa-chart-line text-4xl text-blue-600 mr-2"></i>
+                    <span class="text-3xl font-bold text-gray-900">PROSPECTA</span>
+                </a>
+                <p class="mt-2 text-gray-600">Gestão de Oportunidades</p>
+            </div>
+
+            <!-- Conteúdo -->
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                {% if messages %}
+                    <div class="mb-6 space-y-3">
+                        {% for message in messages %}
+                            <div class="p-4 rounded-lg {% if message.tags %}{{ message.tags }}{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-6 text-sm text-gray-600">
+                <p>&copy; 2025 PROSPECTA. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

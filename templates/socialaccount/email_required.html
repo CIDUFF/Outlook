@@ -1,0 +1,38 @@
+{% extends "socialaccount/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Confirmar Email" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Verificar Email" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Enviamos um link de confirmação para seu email" %}</p>
+    </div>
+
+    <div class="bg-info-50 border border-info-200 rounded-lg p-4">
+        <p class="text-blue-800">
+            <i class="fas fa-envelope mr-2"></i>
+            {% trans "Verifique sua caixa de entrada e clique no link de confirmação." %}
+        </p>
+    </div>
+
+    <div class="space-y-3 text-center text-sm text-gray-600">
+        <p>{% trans "Não recebeu o email?" %}</p>
+        <form method="post" action="{% url 'account_email_verification_sent' %}">
+            {% csrf_token %}
+            <button type="submit" class="text-blue-600 hover:text-blue-700 font-medium">
+                {% trans "Reenviar Email" %}
+            </button>
+        </form>
+    </div>
+
+    <!-- Voltar -->
+    <div class="text-center text-sm">
+        <a href="{% url 'account_login' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+            ← {% trans "Voltar" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}
