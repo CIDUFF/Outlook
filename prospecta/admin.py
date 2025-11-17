@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Client, Contact, Team, SalesModel, Opportunity, Stage, Activity,
+    Client, Contact, SalesModel, Opportunity, Stage, Activity,
     OpportunityHistory, StageHistory, ActivityHistory
 )
 
@@ -18,13 +18,6 @@ class ContactAdmin(admin.ModelAdmin):
     list_filter = ('created_at', 'client')
     readonly_fields = ('id', 'created_at')
 
-@admin.register(Team)
-class TeamAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_by', 'created_at')
-    search_fields = ('name',)
-    list_filter = ('created_at', 'created_by')
-    readonly_fields = ('id', 'created_at')
-
 @admin.register(SalesModel)
 class SalesModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_at')
@@ -34,9 +27,9 @@ class SalesModelAdmin(admin.ModelAdmin):
 
 @admin.register(Opportunity)
 class OpportunityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'client', 'status', 'value_brl', 'created_at')
+    list_display = ('title', 'client', 'status', 'value_brl', 'responsible_user', 'created_at')
     search_fields = ('title', 'client__name')
-    list_filter = ('status', 'created_at', 'team')
+    list_filter = ('status', 'created_at', 'responsible_user')
     readonly_fields = ('id', 'created_at', 'updated_at')
 
 @admin.register(Stage)

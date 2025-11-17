@@ -5,6 +5,7 @@ from .models import (
     Opportunity, Stage, Activity,
     OpportunityHistory, StageHistory, ActivityHistory
 )
+from .middleware import get_current_user
 import json
 
 # Armazenar valores anteriores para comparação
@@ -21,7 +22,7 @@ def track_opportunity_pre_save(sender, instance, **kwargs):
             'description': obj.description,
             'status': obj.status,
             'value_brl': str(obj.value_brl) if obj.value_brl else None,
-            'team': obj.team_id,
+            'responsible_user': obj.responsible_user_id,
             'sales_model': obj.sales_model_id,
             'expected_delivery_date': str(obj.expected_delivery_date) if obj.expected_delivery_date else None,
             'delivery_date': str(obj.delivery_date) if obj.delivery_date else None,
@@ -56,8 +57,8 @@ def track_opportunity_changes(sender, instance, created, **kwargs):
                 new_val = str(instance.expected_delivery_date) if instance.expected_delivery_date else None
             elif field == 'delivery_date':
                 new_val = str(instance.delivery_date) if instance.delivery_date else None
-            elif field == 'team':
-                new_val = instance.team_id
+            elif field == 'responsible_user':
+                new_val = instance.responsible_user_id
             elif field == 'sales_model':
                 new_val = instance.sales_model_id
             
@@ -75,7 +76,7 @@ def track_opportunity_changes(sender, instance, created, **kwargs):
     
     OpportunityHistory.objects.create(
         opportunity=instance,
-        changed_by=None,  # Será preenchido pela view/API
+        changed_by=get_current_user(),
         change_type=change_type,
         change_details=json.dumps(change_details, ensure_ascii=False)
     )
@@ -128,7 +129,7 @@ def track_stage_changes(sender, instance, created, **kwargs):
     
     StageHistory.objects.create(
         stage=instance,
-        changed_by=None,
+        changed_by=get_current_user(),
         change_type=change_type,
         change_details=json.dumps(change_details, ensure_ascii=False)
     )
@@ -195,7 +196,7 @@ def track_activity_changes(sender, instance, created, **kwargs):
     
     ActivityHistory.objects.create(
         activity=instance,
-        changed_by=None,
+        changed_by=get_current_user(),
         change_type=change_type,
         change_details=json.dumps(change_details, ensure_ascii=False)
     )
