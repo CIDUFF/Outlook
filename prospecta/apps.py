@@ -7,3 +7,7 @@ class ProspectaConfig(AppConfig):
     
     def ready(self):
         import prospecta.signals
+        from django.contrib import admin
+        admin.site.site_header = "PROSPECTA - GESTÃO DE OPORTUNIDADES"
+        admin.site.site_title = "PROSPECTA"
+        admin.site.index_title = "Bem-vindo ao PROSPECTA"
