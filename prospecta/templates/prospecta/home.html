@@ -1,0 +1,194 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}Home - PROSPECTA{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+    <!-- Welcome Section -->
+    <div class="mb-8">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-8 text-white">
+            <h1 class="text-4xl font-bold mb-2">Bem-vindo, {{ user.get_full_name }}</h1>
+            <p class="text-blue-100">Você está logado como <span class="font-semibold">{{ profile.get_role_display }}</span></p>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Total de Oportunidades</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_opportunities }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-lg">
+                    <i class="fas fa-handshake text-blue-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Clientes</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_clients }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-lg">
+                    <i class="fas fa-users text-green-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Oportunidades Abertas</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ open_opportunities }}</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-lg">
+                    <i class="fas fa-star text-yellow-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm">Minhas Atividades Pendentes</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ my_activities }}</p>
+                </div>
+                <div class="bg-red-100 p-3 rounded-lg">
+                    <i class="fas fa-tasks text-red-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% if is_seller %}
+        <a href="{% url 'prospecta:opportunity_create' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer">
+            <div class="flex items-center mb-4">
+                <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-plus text-blue-600 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Nova Oportunidade</h3>
+            </div>
+            <p class="text-gray-600">Crie uma nova oportunidade de vendas para acompanhamento</p>
+        </a>
+        {% endif %}
+
+        {% if is_manager %}
+        <a href="{% url 'prospecta:client_create' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-user-plus text-green-600 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Novo Cliente</h3>
+            </div>
+            <p class="text-gray-600">Adicione um novo cliente à sua base de dados</p>
+        </a>
+        {% endif %}
+
+        <a href="{% url 'prospecta:opportunities_list' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer">
+            <div class="flex items-center mb-4">
+                <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-list text-purple-600 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Ver Oportunidades</h3>
+            </div>
+            <p class="text-gray-600">Acesse a lista completa de oportunidades</p>
+        </a>
+
+        <a href="{% url 'prospecta:activities_list' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer">
+            <div class="flex items-center mb-4">
+                <div class="bg-orange-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-check-circle text-orange-600 text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Minhas Atividades</h3>
+            </div>
+            <p class="text-gray-600">Gerencie suas atividades e tarefas atribuídas</p>
+        </a>
+    </div>
+
+{% else %}
+    <!-- Landing Page for Unauthenticated Users -->
+    <div class="space-y-12">
+        <!-- Hero Section -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-2xl p-12 text-white text-center">
+            <h1 class="text-5xl font-bold mb-4">PROSPECTA</h1>
+            <p class="text-xl text-blue-100 mb-8">Sistema Completo de Gestão de Oportunidades e Vendas</p>
+            <a href="{% url 'account_login' %}" class="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
+                Entrar no Sistema
+            </a>
+        </div>
+
+        <!-- Features -->
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Recursos Principais</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-blue-100 p-4 rounded-lg mb-4 inline-block">
+                        <i class="fas fa-chart-line text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Gestão de Oportunidades</h3>
+                    <p class="text-gray-600">Acompanhe todas as suas oportunidades de venda em um único lugar com informações detalhadas e histórico completo.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-green-100 p-4 rounded-lg mb-4 inline-block">
+                        <i class="fas fa-users text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Gerenciamento de Clientes</h3>
+                    <p class="text-gray-600">Mantenha um controle centralizado de todos os seus clientes com informações de contato e histórico de interações.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-purple-100 p-4 rounded-lg mb-4 inline-block">
+                        <i class="fas fa-tasks text-purple-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Controle de Atividades</h3>
+                    <p class="text-gray-600">Delegue tarefas, acompanhe o progresso e mantenha sua equipe alinhada com os objetivos de vendas.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-orange-100 p-4 rounded-lg mb-4 inline-block">
+                        <i class="fas fa-lock text-orange-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Controle de Acesso</h3>
+                    <p class="text-gray-600">Sistema de permissões baseado em roles para garantir segurança e organização dos dados.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-red-100 p-4 rounded-lg mb-4 inline-block">
+                        <i class="fas fa-chart-bar text-red-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Relatórios Avançados</h3>
+                    <p class="text-gray-600">Analise dados de vendas com relatórios detalhados e visualizações intuitivas para melhor tomada de decisão.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-indigo-100 p-4 rounded-lg mb-4 inline-block">
+                        <i class="fas fa-key text-indigo-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Autenticação OAuth</h3>
+                    <p class="text-gray-600">Autenticação segura com suporte a provedores OAuth para facilitar o acesso dos usuários.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="bg-blue-50 border-l-4 border-blue-600 p-8 rounded">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Pronto para começar?</h3>
+            <p class="text-gray-700 mb-6">Faça login ou crie uma conta para acessar o sistema PROSPECTA e maximizar sua produtividade em vendas.</p>
+            <div class="flex gap-4">
+                <a href="{% url 'account_login' %}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                    Entrar
+                </a>
+                <a href="{% url 'socialaccount_signup' %}" class="bg-white text-blue-600 border-2 border-blue-600 px-6 py-2 rounded-lg hover:bg-blue-50 transition">
+                    Criar Conta
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

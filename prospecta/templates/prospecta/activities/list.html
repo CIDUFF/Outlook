@@ -1,0 +1,128 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}Atividades - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900">Minhas Atividades</h1>
+            <p class="text-gray-600 mt-2">Gerencie suas tarefas e atividades</p>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Status</label>
+                <select name="status" onchange="window.location.href='?status=' + this.value" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Todos os status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activities Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Título</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Oportunidade</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Data Esperada</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Aprovada</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ação</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for activity in activities %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ activity.title }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <a href="{% url 'prospecta:opportunity_detail' pk=activity.stage.opportunity.pk %}" class="text-blue-600 hover:text-blue-700">
+                                {{ activity.stage.opportunity.title }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            {% if activity.status == 'pendente' %}
+                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Pendente</span>
+                            {% elif activity.status == 'em_andamento' %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Em Andamento</span>
+                            {% elif activity.status == 'concluida' %}
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Concluída</span>
+                            {% else %}
+                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelada</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ activity.expected_date|date:'d/m/Y'|default:"N/A" }}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            {% if activity.approved %}
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                <i class="fas fa-check mr-1"></i>Sim
+                            </span>
+                            {% else %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                                <i class="fas fa-clock mr-1"></i>Não
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm space-x-2">
+                            {% if not activity.approved and is_manager %}
+                            <form method="post" action="{% url 'prospecta:activity_approve' pk=activity.pk %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-green-600 hover:text-green-700 font-medium">
+                                    <i class="fas fa-check mr-1"></i>Aprovar
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-2 block"></i>
+                            Nenhuma atividade encontrada
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-gray-600 text-sm">Total de Atividades</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2">{{ activities.count }}</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-gray-600 text-sm">Atividades Pendentes</p>
+            <p class="text-3xl font-bold text-red-600 mt-2">{{ pending_count }}</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-gray-600 text-sm">Taxa de Conclusão</p>
+            <p class="text-3xl font-bold text-green-600 mt-2">
+                {% if activities.count > 0 %}
+                    {{ activities|dictsort:"approved"|length }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

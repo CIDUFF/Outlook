@@ -2,6 +2,43 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
+
+class UserProfile(models.Model):
+    """Perfil estendido do usuário com roles e permissões"""
+    ROLE_CHOICES = [
+        ('admin', 'Administrador'),
+        ('gerente', 'Gerente de Vendas'),
+        ('vendedor', 'Vendedor'),
+        ('analista', 'Analista'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name='Usuário')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='vendedor', verbose_name='Papel')
+    department = models.CharField(max_length=100, blank=True, null=True, verbose_name='Departamento')
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name='Telefone')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='Avatar')
+    bio = models.TextField(blank=True, null=True, verbose_name='Biografia')
+    is_active = models.BooleanField(default=True, verbose_name='Ativo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
+
+    class Meta:
+        db_table = 'tab_user_profiles'
+        verbose_name = 'Perfil de Usuário'
+        verbose_name_plural = 'Perfis de Usuário'
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.get_role_display()}"
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def is_manager(self):
+        return self.role in ['admin', 'gerente']
+
+    def is_seller(self):
+        return self.role in ['admin', 'gerente', 'vendedor']
+
 class Client(models.Model):
     """Clientes"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, verbose_name='ID')

@@ -1,8 +1,35 @@
 from django.contrib import admin
 from .models import (
     Client, Contact, SalesModel, Opportunity, Stage, Activity,
-    OpportunityHistory, StageHistory, ActivityHistory
+    OpportunityHistory, StageHistory, ActivityHistory, UserProfile
 )
+
+from django.contrib import admin
+from .models import (
+    Client, Contact, SalesModel, Opportunity, Stage, Activity,
+    OpportunityHistory, StageHistory, ActivityHistory, UserProfile
+)
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role', 'is_active', 'department', 'created_at')
+    search_fields = ('user__username', 'user__email', 'department')
+    list_filter = ('role', 'is_active', 'created_at')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Usuário', {
+            'fields': ('user', 'id', 'created_at', 'updated_at')
+        }),
+        ('Informações Profissionais', {
+            'fields': ('role', 'department', 'phone', 'bio')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+        ('Avatar', {
+            'fields': ('avatar',)
+        }),
+    )
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):

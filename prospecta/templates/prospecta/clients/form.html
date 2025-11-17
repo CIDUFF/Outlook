@@ -1,0 +1,55 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}{% if client %}Editar{% else %}Novo{% endif %} Cliente - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">
+        {% if client %}Editar Cliente{% else %}Novo Cliente{% endif %}
+    </h1>
+
+    <div class="bg-white rounded-lg shadow p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
+                    <input type="text" name="name" value="{{ client.name }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Empresa XYZ">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">CNPJ *</label>
+                    <input type="text" name="cnpj" value="{{ client.cnpj }}" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="00.000.000/0000-00">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
+                <input type="email" name="email" value="{{ client.email }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="email@empresa.com">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                    <input type="text" name="phone" value="{{ client.phone }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="(XX) XXXXX-XXXX">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                <textarea name="address" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Rua, Número, Cidade, Estado">{{ client.address }}</textarea>
+            </div>
+
+            <div class="flex gap-4 pt-6 border-t border-gray-200">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
+                    <i class="fas fa-save mr-2"></i>{% if client %}Atualizar{% else %}Criar{% endif %} Cliente
+                </button>
+                <a href="{% url 'prospecta:clients_list' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition font-medium">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

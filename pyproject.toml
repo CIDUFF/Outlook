@@ -9,4 +9,9 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "ruff>=0.14.5",
     "toll>=4.2.1",
+    "django-allauth>=0.57.0",
+    "django-oauth-toolkit>=2.3.0",
+    "social-auth-app-django>=5.4.0",
+    "python-decouple>=3.8",
+    "Pillow>=10.0.0",
 ]

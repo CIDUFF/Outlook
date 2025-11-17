@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PROSPECTA - Gestão de Oportunidades{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="{% url 'prospecta:home' %}" class="text-2xl font-bold text-blue-600">
+                        <i class="fas fa-chart-line mr-2"></i>PROSPECTA
+                    </a>
+                </div>
+
+                <!-- Menu Central -->
+                {% if user.is_authenticated %}
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="{% url 'prospecta:dashboard' %}" class="text-gray-700 hover:text-blue-600 transition">
+                        <i class="fas fa-home mr-1"></i>Dashboard
+                    </a>
+                    
+                    {% if is_seller %}
+                    <a href="{% url 'prospecta:opportunities_list' %}" class="text-gray-700 hover:text-blue-600 transition">
+                        <i class="fas fa-handshake mr-1"></i>Oportunidades
+                    </a>
+                    {% endif %}
+                    
+                    {% if is_manager %}
+                    <a href="{% url 'prospecta:clients_list' %}" class="text-gray-700 hover:text-blue-600 transition">
+                        <i class="fas fa-users mr-1"></i>Clientes
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'prospecta:activities_list' %}" class="text-gray-700 hover:text-blue-600 transition relative">
+                        <i class="fas fa-tasks mr-1"></i>Atividades
+                        {% if pending_activities_count > 0 %}
+                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            {{ pending_activities_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+                    
+                    {% if is_admin %}
+                    <a href="{% url 'prospecta:reports' %}" class="text-gray-700 hover:text-blue-600 transition">
+                        <i class="fas fa-chart-bar mr-1"></i>Relatórios
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                    <div class="hidden md:flex items-center space-x-4">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name }}" class="w-8 h-8 rounded-full">
+                        {% else %}
+                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
+                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="relative group">
+                            <button class="flex items-center text-gray-700 hover:text-blue-600 transition">
+                                <span>{{ user.get_full_name }}</span>
+                                <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div class="absolute right-0 mt-0 w-48 bg-white rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 invisible group-hover:visible">
+                                <a href="{% url 'prospecta:profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                                    <i class="fas fa-user mr-2"></i>Meu Perfil
+                                </a>
+                                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'account_login' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Entrar
+                    </a>
+                    {% endif %}
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" class="md:hidden text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
+                {% if user.is_authenticated %}
+                <a href="{% url 'prospecta:dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                {% if is_seller %}
+                <a href="{% url 'prospecta:opportunities_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                    <i class="fas fa-handshake mr-2"></i>Oportunidades
+                </a>
+                {% endif %}
+                {% if is_manager %}
+                <a href="{% url 'prospecta:clients_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                    <i class="fas fa-users mr-2"></i>Clientes
+                </a>
+                {% endif %}
+                <a href="{% url 'prospecta:activities_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                    <i class="fas fa-tasks mr-2"></i>Atividades
+                </a>
+                <a href="{% url 'prospecta:profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                    <i class="fas fa-user mr-2"></i>Meu Perfil
+                </a>
+                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        {% for message in messages %}
+        <div class="rounded-lg p-4 mb-4 {% if message.tags %}bg-{{ message.tags }}-100 text-{{ message.tags }}-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p>&copy; 2025 PROSPECTA - Sistema de Gestão de Oportunidades. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle mobile menu
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

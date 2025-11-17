@@ -1,0 +1,126 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}Oportunidades - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900">Oportunidades</h1>
+            <p class="text-gray-600 mt-2">Gerencie todas as suas oportunidades de vendas</p>
+        </div>
+        {% if is_seller %}
+        <a href="{% url 'prospecta:opportunity_create' %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium">
+            <i class="fas fa-plus mr-2"></i>Nova Oportunidade
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Status</label>
+                <select hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Todos os status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Cliente</label>
+                <select name="client" hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Todos os clientes</option>
+                    {% for client in clients %}
+                    <option value="{{ client.pk }}">{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Ordenar por</label>
+                <select name="sort" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="-created_at">Mais Recentes</option>
+                    <option value="created_at">Mais Antigos</option>
+                    <option value="-value_brl">Maior Valor</option>
+                    <option value="value_brl">Menor Valor</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opportunities Table -->
+    <div id="opportunities-table" class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Título</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Cliente</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Valor</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Responsável</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Data</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ação</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for opp in opportunities %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ opp.title }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ opp.client.name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 font-semibold">
+                            R$ {{ opp.value_brl|floatformat:2|default:"N/A" }}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <form hx-post="{% url 'prospecta:opportunity_status_update' pk=opp.pk %}" hx-target="#status-{{ opp.pk }}" class="inline">
+                                {% csrf_token %}
+                                <select name="status" hx-trigger="change" class="text-sm px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">
+                                    {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if opp.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ opp.responsible_user.get_full_name }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ opp.created_at|date:'d/m/Y' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm space-x-2">
+                            <a href="{% url 'prospecta:opportunity_detail' pk=opp.pk %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                                <i class="fas fa-eye mr-1"></i>Ver
+                            </a>
+                            {% if is_manager %}
+                            <a href="{% url 'prospecta:opportunity_update' pk=opp.pk %}" class="text-green-600 hover:text-green-700 font-medium">
+                                <i class="fas fa-edit mr-1"></i>Editar
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-2 block"></i>
+                            Nenhuma oportunidade encontrada
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <p class="text-gray-600 text-sm">Total de Oportunidades</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2">{{ opportunities.count }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
