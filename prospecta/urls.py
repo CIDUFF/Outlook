@@ -1,22 +1,15 @@
 from django.urls import path
 from . import views
-from . import debug_views
 
 app_name = 'prospecta'
 
 urlpatterns = [
-    # Debug URLs
-    path('debug/oauth/', debug_views.oauth_debug, name='oauth_debug'),
-    
     # Public pages
     path('', views.home, name='home'),
     
     # Dashboard and main views (require login)
     path('dashboard/', views.dashboard, name='dashboard'),
     path('perfil/', views.profile_view, name='profile'),
-    
-    # Google OAuth
-    path('auth/google/', views.google_oauth_login, name='google_oauth_login'),
     
     # Opportunities
     path('oportunidades/', views.opportunities_list, name='opportunities_list'),

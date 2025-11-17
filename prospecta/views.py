@@ -553,35 +553,3 @@ def reports(request):
     })
     
     return render(request, 'prospecta/reports.html', context)
-
-
-# ============================================================================
-# Google OAuth Views
-# ============================================================================
-
-@require_http_methods(['GET'])
-def google_oauth_login(request):
-    """Redireciona para o Google OAuth consent screen"""
-    from allauth.socialaccount.models import SocialApp
-    from django.contrib.sites.models import Site
-    from urllib.parse import urlencode
-    
-    try:
-        # Pega a SocialApp do Google
-        google_app = SocialApp.objects.get(provider='google')
-        current_site = Site.objects.get_current()
-        
-        # Parâmetros para o Google OAuth
-        oauth_params = {
-            'client_id': google_app.client_id,
-            'redirect_uri': f'http://{current_site.domain}/accounts/google/login/callback/',
-            'response_type': 'code',
-            'scope': 'openid email profile',
-            'access_type': 'online',
-        }
-        
-        google_oauth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(oauth_params)
-        return redirect(google_oauth_url)
-    except SocialApp.DoesNotExist:
-        messages.error(request, 'Google OAuth não está configurado.')
-        return redirect('account_login')
