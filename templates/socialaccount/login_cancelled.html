@@ -1,0 +1,31 @@
+{% extends "socialaccount/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Login Cancelado" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Login Cancelado" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Você cancelou o login com rede social" %}</p>
+    </div>
+
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p class="text-yellow-800">
+            <i class="fas fa-info-circle mr-2"></i>
+            {% trans "O login com rede social foi cancelado." %}
+        </p>
+    </div>
+
+    <!-- Voltar -->
+    <div class="text-center text-sm space-y-2">
+        <a href="{% url 'account_login' %}" class="block text-blue-600 hover:text-blue-700 font-medium">
+            {% trans "Tentar novamente" %}
+        </a>
+        <a href="{% url 'prospecta:home' %}" class="block text-gray-600 hover:text-gray-700">
+            ← {% trans "Voltar para home" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}

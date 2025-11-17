@@ -1,0 +1,37 @@
+{% extends "socialaccount/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Conectar Contas Sociais" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Suas Contas Conectadas" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Gerencie suas contas de rede social" %}</p>
+    </div>
+
+    {% if sociallogin %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-blue-800">
+                <i class="fas fa-check-circle mr-2"></i>
+                {% trans "Você está conectado via" %} {{ sociallogin.account.provider|upper }}
+            </p>
+        </div>
+    {% else %}
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p class="text-gray-800">
+                <i class="fas fa-info-circle mr-2"></i>
+                {% trans "Você não tem contas sociais conectadas." %}
+            </p>
+        </div>
+    {% endif %}
+
+    <!-- Voltar -->
+    <div class="text-center text-sm">
+        <a href="{% url 'prospecta:profile' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+            ← {% trans "Voltar ao Perfil" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}

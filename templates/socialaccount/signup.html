@@ -1,0 +1,43 @@
+{% extends "socialaccount/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Cadastro com Rede Social" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Completar Cadastro" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Preencha os dados para finalizar" %}</p>
+    </div>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {{ form.as_p }}
+
+        <!-- Botão -->
+        <button 
+            type="submit" 
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition"
+        >
+            {% trans "Completar Cadastro" %}
+        </button>
+    </form>
+
+    <!-- Voltar -->
+    <div class="text-center text-sm">
+        <a href="{% url 'account_login' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+            ← {% trans "Voltar" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}

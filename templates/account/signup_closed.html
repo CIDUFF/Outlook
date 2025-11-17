@@ -1,0 +1,28 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Cadastro Fechado" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Cadastro Fechado" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Desculpe, cadastro não está disponível" %}</p>
+    </div>
+
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-red-800">
+            <i class="fas fa-times-circle mr-2"></i>
+            {% trans "No momento, não é possível criar novas contas. Entre em contato com o administrador." %}
+        </p>
+    </div>
+
+    <!-- Voltar -->
+    <div class="text-center text-sm">
+        <a href="{% url 'prospecta:home' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+            ← {% trans "Voltar para home" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}

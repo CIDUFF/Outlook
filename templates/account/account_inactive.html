@@ -1,0 +1,28 @@
+{% extends "account/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Conta Inativa" %} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{% trans "Conta Inativa" %}</h1>
+        <p class="mt-2 text-gray-600">{% trans "Sua conta está inativa" %}</p>
+    </div>
+
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p class="text-yellow-800">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            {% trans "Sua conta foi desativada. Entre em contato com o administrador para reativá-la." %}
+        </p>
+    </div>
+
+    <!-- Contato -->
+    <div class="text-center text-sm">
+        <a href="{% url 'prospecta:home' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+            ← {% trans "Voltar para home" %}
+        </a>
+    </div>
+</div>
+
+{% endblock %}
