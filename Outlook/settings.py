@@ -71,7 +71,7 @@ ROOT_URLCONF = 'Outlook.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'prospecta' / 'templates'],
+        'DIRS': [BASE_DIR / 'templates', BASE_DIR / 'prospecta' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -161,9 +161,10 @@ AUTHENTICATION_BACKENDS = [
 
 # Django-allauth settings
 ACCOUNT_LOGIN_METHODS = {'email': True}
-ACCOUNT_SIGNUP_FIELDS = ['email', 'password1', 'password2']
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
+SOCIALACCOUNT_EMAIL_REQUIRED = False
 
 LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'prospecta:dashboard'
@@ -173,4 +174,41 @@ ACCOUNT_LOGOUT_REDIRECT_URL = 'prospecta:home'
 ADMIN_SITE_HEADER = "PROSPECTA - GESTÃO DE OPORTUNIDADES"
 ADMIN_SITE_TITLE = "PROSPECTA"
 ADMIN_INDEX_TITLE = "Bem-vindo ao PROSPECTA"
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/tmp/django_oauth.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'allauth': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
