@@ -9,9 +9,47 @@ from datetime import datetime
 
 from .models import (
     Opportunity, Activity, Meeting, OpportunityDocument,
-    ActivityAttachment, User
+    ActivityAttachment, User, GoogleCalendarIntegration
 )
 from .views import get_user_context, role_required
+
+# ============================================================================
+# GOOGLE CALENDAR INTEGRATION
+# ============================================================================
+
+
+@login_required(login_url='account_login')
+def google_calendar_connect(request):
+    """Redireciona para Google OAuth ou mostra status"""
+    try:
+        # Verificar se já tem integração configurada
+        integration = GoogleCalendarIntegration.objects.get(user=request.user)
+        if integration.is_active and integration.access_token:
+            messages.info(request, '✓ Google Calendar já está conectado!')
+            return redirect('prospecta:dashboard')
+    except GoogleCalendarIntegration.DoesNotExist:
+        pass
+
+    # Redirecionar para Google login do allauth
+    return redirect('google_login')
+
+
+@login_required(login_url='account_login')
+def google_calendar_status(request):
+    """Verificar status de conexão com Google Calendar"""
+    try:
+        integration = GoogleCalendarIntegration.objects.get(user=request.user)
+        status = {
+            'connected': integration.is_active and bool(integration.access_token),
+            'calendar_id': integration.calendar_id,
+            'created_at': integration.created_at.isoformat() if integration.created_at else None,
+        }
+    except GoogleCalendarIntegration.DoesNotExist:
+        status = {'connected': False}
+
+    return JsonResponse(status)
+
+
 # ============================================================================
 # DOCUMENTOS
 # ============================================================================
@@ -353,7 +391,8 @@ def associate_meeting_to_activity(request, activity_pk):
             activity.save()
             messages.success(request, 'Reunião desassociada da atividade.')
 
-        return redirect('prospecta:activity_detail', pk=activity_pk)
+        opportunity = activity.stage.opportunity
+        return redirect('prospecta:opportunity_detail', pk=opportunity.pk)
 
     # GET - mostrar formulário
     opportunity = activity.stage.opportunity

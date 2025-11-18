@@ -198,12 +198,22 @@ class Stage(models.Model):
 
 
 class Activity(models.Model):
-    """Atividades dentro das etapas"""
+    """Atividades dentro de etapas em oportunidades"""
     STATUS_CHOICES = [
         ('pendente', 'Pendente'),
         ('em_andamento', 'Em Andamento'),
         ('concluida', 'Concluída'),
         ('cancelada', 'Cancelada'),
+    ]
+
+    ACTIVITY_TYPE_CHOICES = [
+        ('tarefa', 'Tarefa'),
+        ('reuniao', 'Reunião'),
+        ('ligacao', 'Ligação'),
+        ('email', 'Email'),
+        ('proposta', 'Proposta'),
+        ('follow_up', 'Follow-up'),
+        ('outro', 'Outro'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,
@@ -219,6 +229,8 @@ class Activity(models.Model):
                                      related_name='activities_delegated', verbose_name='Delegada por')
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='pendente', verbose_name='Status')
+    activity_type = models.CharField(
+        max_length=20, choices=ACTIVITY_TYPE_CHOICES, default='tarefa', verbose_name='Tipo de Atividade')
     start_date = models.DateField(
         blank=True, null=True, verbose_name='Data de Início')
     expected_date = models.DateField(

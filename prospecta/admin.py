@@ -72,9 +72,10 @@ class StageAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'stage', 'status', 'assigned_to', 'created_at')
+    list_display = ('title', 'stage', 'activity_type',
+                    'status', 'assigned_to', 'created_at')
     search_fields = ('title', 'assigned_to__username')
-    list_filter = ('status', 'created_at', 'approved')
+    list_filter = ('status', 'activity_type', 'created_at', 'approved')
     readonly_fields = ('id', 'created_at', 'updated_at')
 
 

@@ -139,6 +139,10 @@ urlpatterns = [
          calendar_views.activity_quick_associate, name='activity_quick_associate'),
 
     # Google Calendar Integration
+    path('google-calendar/conectar/',
+         calendar_views.google_calendar_connect, name='google_calendar_connect'),
+    path('google-calendar/status/',
+         calendar_views.google_calendar_status, name='google_calendar_status'),
     path('google-calendar/callback/',
          calendar_views.google_calendar_callback, name='google_calendar_callback'),
 ]

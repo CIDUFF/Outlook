@@ -30,6 +30,21 @@
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{% if activity %}{{ activity.description }}{% endif %}</textarea>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Atividade</label>
+                    <select name="activity_type" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">-- Selecione um tipo --</option>
+                        <option value="tarefa" {% if activity and activity.activity_type == 'tarefa' %}selected{% endif %}>📋 Tarefa</option>
+                        <option value="reuniao" {% if activity and activity.activity_type == 'reuniao' %}selected{% endif %}>📅 Reunião</option>
+                        <option value="ligacao" {% if activity and activity.activity_type == 'ligacao' %}selected{% endif %}>☎️ Ligação</option>
+                        <option value="email" {% if activity and activity.activity_type == 'email' %}selected{% endif %}>📧 Email</option>
+                        <option value="proposta" {% if activity and activity.activity_type == 'proposta' %}selected{% endif %}>📄 Proposta</option>
+                        <option value="follow_up" {% if activity and activity.activity_type == 'follow_up' %}selected{% endif %}>🔄 Follow-up</option>
+                        <option value="outro" {% if activity and activity.activity_type == 'outro' %}selected{% endif %}>📌 Outro</option>
+                    </select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Data de Início</label>

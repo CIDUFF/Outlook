@@ -34,7 +34,7 @@ def oauth_status(request):
                 'sites': [str(s) for s in app.sites.all()]
             })
 
-        return JsonResponse(data, indent=2)
+        return JsonResponse(data, safe=False, json_dumps_params={'indent': 2})
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
