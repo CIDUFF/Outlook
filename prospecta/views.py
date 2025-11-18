@@ -402,11 +402,17 @@ def opportunity_detail(request, pk):
         stage__opportunity=opportunity
     ).count()
 
+    # Buscar histórico de atividades relacionadas à oportunidade
+    activity_history = ActivityHistory.objects.filter(
+        activity__stage__opportunity=opportunity
+    ).select_related('activity', 'changed_by')[:20]
+
     context = get_user_context(request.user)
     context.update({
         'opportunity': opportunity,
         'stages': opportunity.stages.all().order_by('order'),
         'history': opportunity.history.all()[:10],
+        'activity_history': activity_history,
         'available_users': available_users,
         'opportunity_activity_count': opportunity_activity_count,
     })
