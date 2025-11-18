@@ -405,7 +405,7 @@ def opportunity_detail(request, pk):
     # Buscar histórico de atividades relacionadas à oportunidade
     activity_history = ActivityHistory.objects.filter(
         activity__stage__opportunity=opportunity
-    ).select_related('activity', 'changed_by')[:20]
+    ).select_related('activity', 'changed_by')
 
     context = get_user_context(request.user)
     context.update({
