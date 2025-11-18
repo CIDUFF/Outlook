@@ -62,7 +62,7 @@ class UserProfile(models.Model):
 
 
 class Client(models.Model):
-    """Clientes"""
+    """Empresas"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,
                           editable=False, verbose_name='ID')
     name = models.CharField(max_length=255, verbose_name='Nome')
@@ -76,8 +76,8 @@ class Client(models.Model):
 
     class Meta:
         db_table = 'tab_clients'
-        verbose_name = 'Cliente'
-        verbose_name_plural = 'Clientes'
+        verbose_name = 'Empresa'
+        verbose_name_plural = 'Empresas'
 
     def __str__(self):
         return self.name

@@ -518,10 +518,10 @@ def opportunity_status_update(request, pk):
 
 @login_required(login_url='account_login')
 def clients_list(request):
-    """Lista de clientes"""
+    """Lista de empresas"""
     context = get_user_context(request.user)
 
-    # Visitantes não podem acessar clientes
+    # Visitantes não podem acessar empresas
     try:
         profile = request.user.profile
     except UserProfile.DoesNotExist:
@@ -529,7 +529,7 @@ def clients_list(request):
 
     if profile.is_visitor():
         messages.error(
-            request, 'Você não tem permissão para acessar clientes.')
+            request, 'Você não tem permissão para acessar empresas.')
         return redirect('prospecta:home')
 
     clients = Client.objects.all()
@@ -548,7 +548,7 @@ def clients_list(request):
 @login_required(login_url='account_login')
 @role_required('admin', 'gerente')
 def client_create(request):
-    """Criar novo cliente"""
+    """Criar nova empresa"""
     context = get_user_context(request.user)
 
     if request.method == 'POST':
@@ -560,7 +560,7 @@ def client_create(request):
             email=request.POST.get('email', ''),
         )
         client.save()
-        messages.success(request, 'Cliente criado com sucesso!')
+        messages.success(request, 'Empresa criada com sucesso!')
         return redirect('prospecta:client_detail', pk=client.pk)
 
     return render(request, 'prospecta/clients/form.html', context)
@@ -568,7 +568,7 @@ def client_create(request):
 
 @login_required(login_url='account_login')
 def client_detail(request, pk):
-    """Detalhes do cliente"""
+    """Detalhes da empresa"""
     # Visitantes não podem acessar
     try:
         profile = request.user.profile
@@ -577,7 +577,7 @@ def client_detail(request, pk):
 
     if profile.is_visitor():
         messages.error(
-            request, 'Você não tem permissão para acessar clientes.')
+            request, 'Você não tem permissão para acessar empresas.')
         return redirect('prospecta:home')
     client = get_object_or_404(Client, pk=pk)
     context = get_user_context(request.user)
@@ -593,7 +593,7 @@ def client_detail(request, pk):
 @login_required(login_url='account_login')
 @role_required('admin', 'gerente')
 def client_update(request, pk):
-    """Editar cliente"""
+    """Editar empresa"""
     client = get_object_or_404(Client, pk=pk)
 
     if request.method == 'POST':
@@ -603,7 +603,7 @@ def client_update(request, pk):
         client.phone = request.POST.get('phone', '')
         client.email = request.POST.get('email', '')
         client.save()
-        messages.success(request, 'Cliente atualizado com sucesso!')
+        messages.success(request, 'Empresa atualizada com sucesso!')
         return redirect('prospecta:client_detail', pk=client.pk)
 
     context = get_user_context(request.user)
@@ -920,13 +920,13 @@ def activity_delete(request, pk):
 
 
 # ============================================================================
-# CONTACTS (Contatos de Cliente)
+# CONTACTS (Contatos de Empresa)
 # ============================================================================
 
 @login_required(login_url='account_login')
 @role_required('admin', 'gerente')
 def contact_create(request, client_pk):
-    """Criar novo contato em um cliente"""
+    """Criar novo contato em uma empresa"""
     client = get_object_or_404(Client, pk=client_pk)
     context = get_user_context(request.user)
 
@@ -1206,7 +1206,7 @@ def toggle_participant_notifications(request, pk, participant_id):
 @login_required(login_url='account_login')
 @require_http_methods(["POST"])
 def search_global(request):
-    """Busca global de oportunidades, clientes, atividades"""
+    """Busca global de oportunidades, empresas, atividades"""
     query = request.POST.get('q', '').strip()
 
     if not query or len(query) < 2:

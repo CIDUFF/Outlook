@@ -1,11 +1,11 @@
 {% extends 'prospecta/base.html' %}
 
-{% block title %}{% if client %}Editar{% else %}Novo{% endif %} Cliente - PROSPECTA{% endblock %}
+{% block title %}{% if client %}Editar{% else %}Nova{% endif %} Empresa - PROSPECTA{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto">
     <h1 class="text-3xl font-bold text-gray-900 mb-8">
-        {% if client %}Editar Cliente{% else %}Novo Cliente{% endif %}
+        {% if client %}Editar Empresa{% else %}Nova Empresa{% endif %}
     </h1>
 
     <div class="bg-white rounded-lg shadow p-8">
@@ -43,7 +43,7 @@
 
             <div class="flex gap-4 pt-6 border-t border-gray-200">
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
-                    <i class="fas fa-save mr-2"></i>{% if client %}Atualizar{% else %}Criar{% endif %} Cliente
+                    <i class="fas fa-save mr-2"></i>{% if client %}Atualizar{% else %}Criar{% endif %} Empresa
                 </button>
                 <a href="{% url 'prospecta:clients_list' %}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition font-medium">
                     Cancelar
