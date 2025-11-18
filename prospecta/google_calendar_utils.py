@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 # Lazy import do Google API (só carrega se necessário)
 try:
     from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
     from googleapiclient.discovery import build
     from googleapiclient.errors import HttpError
     GOOGLE_API_AVAILABLE = True
@@ -34,13 +35,19 @@ class GoogleCalendarManager:
         if not GOOGLE_API_AVAILABLE:
             raise ImportError("Google API client library not installed")
 
+        # Verificar se token expirou e precisa de refresh
+        from django.conf import settings
         self.credentials = Credentials(
             token=access_token,
             refresh_token=refresh_token,
             token_uri='https://oauth2.googleapis.com/token',
-            client_id='YOUR_CLIENT_ID',  # Configurar em settings
-            client_secret='YOUR_CLIENT_SECRET',  # Configurar em settings
+            client_id=getattr(settings, 'GOOGLE_OAUTH2_CLIENT_ID', ''),
+            client_secret=getattr(settings, 'GOOGLE_OAUTH2_CLIENT_SECRET', ''),
         )
+
+        # Se o token expirou, tentar refresh
+        if self.credentials.expired and self.credentials.refresh_token:
+            self.credentials.refresh(Request())
 
         self.service = build('calendar', 'v3', credentials=self.credentials)
 
@@ -232,6 +239,30 @@ class GoogleCalendarManager:
         except HttpError as error:
             logger.error(f"Error listing events: {error}")
             return []
+
+
+def get_or_create_google_integration(user):
+    """
+    Obtém ou cria integração do Google Calendar para um usuário
+
+    Args:
+        user: Instância do User
+
+    Returns:
+        Instância do GoogleCalendarIntegration ou None
+    """
+    from .models import GoogleCalendarIntegration
+
+    try:
+        integration = GoogleCalendarIntegration.objects.get(user=user)
+        if not integration.access_token:
+            logger.warning(f"No access token for user {user.username}")
+            return None
+        return integration
+    except GoogleCalendarIntegration.DoesNotExist:
+        logger.info(f"No Google Calendar integration for user {user.username}")
+        return None
+        return []
 
 
 def sync_meeting_to_google_calendar(meeting) -> bool:

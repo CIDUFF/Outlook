@@ -8,6 +8,7 @@ class ProspectaConfig(AppConfig):
     def ready(self):
         import prospecta.signals
         import prospecta.calendar_signals  # Signals para calendário e documentos
+        import prospecta.oauth_signals  # Signals para OAuth Google Calendar
         from django.contrib import admin
         admin.site.site_header = "PROSPECTA - GESTÃO DE OPORTUNIDADES"
         admin.site.site_title = "PROSPECTA"
