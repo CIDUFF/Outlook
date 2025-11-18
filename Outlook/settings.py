@@ -209,7 +209,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/tmp/django_oauth.log',
+            'filename': BASE_DIR / 'logs' / 'django_oauth.log',
             'formatter': 'detailed',
         },
         'console': {
