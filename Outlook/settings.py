@@ -27,8 +27,8 @@ SECRET_KEY = config(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = [host.strip() for host in config(
+    'ALLOWED_HOSTS', default='127.0.0.1,localhost,cid-uff.net').split(',')]
 
 
 # Application definition
