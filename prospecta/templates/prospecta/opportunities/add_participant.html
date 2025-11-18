@@ -1,0 +1,121 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}Adicionar Participante - {{ opportunity.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2 text-primary"></i>
+                        Adicionar Participante
+                    </h5>
+                    <small class="text-muted">{{ opportunity.title }}</small>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" class="needs-validation">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label">
+                                <i class="fas fa-user me-2"></i>
+                                Selecione um Participante
+                            </label>
+                            <select name="user_id" id="user_id" class="form-select form-select-lg" required>
+                                <option value="" selected disabled>-- Escolha uma pessoa --</option>
+                                {% for user in available_users %}
+                                    <option value="{{ user.id }}">
+                                        {{ user.get_full_name }} ({{ user.profile.get_role_display }})
+                                    </option>
+                                {% empty %}
+                                    <option value="" disabled>Nenhum usuário disponível</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                Apenas usuários ativos que ainda não são participantes aparecem nesta lista.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Nota:</strong> Participantes serão notificados por email quando houver mudanças na oportunidade.
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check me-2"></i>
+                                Adicionar Participante
+                            </button>
+                            <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Participantes Atuais -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-light border-bottom">
+                    <h6 class="mb-0">
+                        <i class="fas fa-list me-2 text-success"></i>
+                        Participantes Atuais ({{ opportunity.participants.count }})
+                    </h6>
+                </div>
+                
+                <div class="card-body">
+                    {% if opportunity.participants.all %}
+                        <div class="list-group">
+                            {% for participant in opportunity.participants.all %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="fas fa-user-circle me-2 text-primary"></i>
+                                                {{ participant.user.get_full_name }}
+                                            </h6>
+                                            <small class="text-muted">
+                                                {{ participant.user.email }}<br>
+                                                Adicionado em {{ participant.added_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            {% if participant.notify_on_update %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-bell me-1"></i>
+                                                    Notificações Ativas
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-bell-slash me-1"></i>
+                                                    Notificações Inativas
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-3">
+                            <i class="fas fa-users me-2"></i>
+                            Nenhum participante adicionado ainda.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-select-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+    }
+</style>
+{% endblock %}

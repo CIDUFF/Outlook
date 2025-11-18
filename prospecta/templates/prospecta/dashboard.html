@@ -1,201 +1,436 @@
 {% extends 'prospecta/base.html' %}
+{% load static %}
+{% load custom_filters %}
 
 {% block title %}Dashboard - PROSPECTA{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-4xl font-bold text-gray-900">Dashboard</h1>
-            <p class="text-gray-600 mt-2">Bem-vindo, {{ user.get_full_name }}!</p>
-        </div>
-    </div>
-
-    <!-- Key Metrics -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Pipeline Total -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center justify-between">
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                 <div>
-                    <p class="text-gray-600 text-sm font-medium">Pipeline Total</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">
-                        R$ {{ total_pipeline|floatformat:0 }}
+                    <h1 class="text-4xl font-bold text-gray-900">Dashboard</h1>
+                    <p class="text-gray-600 mt-2">
+                        <i class="fas fa-wave-square text-blue-600 mr-2"></i>
+                        Bem-vindo, <span class="font-semibold">{{ user.get_full_name }}</span>!
                     </p>
                 </div>
-                <div class="bg-blue-100 p-3 rounded-lg">
-                    <i class="fas fa-coins text-blue-600 text-2xl"></i>
+                <div class="mt-4 sm:mt-0 text-sm text-gray-600">
+                    <i class="fas fa-calendar-alt mr-2"></i>
+                    {% now "d \d\e F \d\e Y" %}
                 </div>
             </div>
         </div>
 
-        <!-- Oportunidades -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-600 text-sm font-medium">Oportunidades</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ opportunities_count }}</p>
-                </div>
-                <div class="bg-green-100 p-3 rounded-lg">
-                    <i class="fas fa-handshake text-green-600 text-2xl"></i>
+        <!-- KPI Cards - Row 1: Main Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Total Pipeline -->
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 border-l-4 border-blue-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Pipeline Total</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">
+                            {{ total_pipeline|format_currency }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">{{ total_opportunities }} oportunidades</p>
+                    </div>
+                    <div class="bg-blue-100 p-4 rounded-lg">
+                        <i class="fas fa-coins text-blue-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Oportunidades Ganhas -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-600 text-sm font-medium">Oportunidades Ganhas</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ won_opportunities }}</p>
-                </div>
-                <div class="bg-yellow-100 p-3 rounded-lg">
-                    <i class="fas fa-check-circle text-yellow-600 text-2xl"></i>
+            <!-- Oportunidades em Progresso -->
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 border-l-4 border-yellow-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Em Progresso</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ in_progress_opportunities }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ in_progress_value|format_currency }}
+                        </p>
+                    </div>
+                    <div class="bg-yellow-100 p-4 rounded-lg">
+                        <i class="fas fa-spinner text-yellow-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Atividades Pendentes -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-600 text-sm font-medium">Atividades Pendentes</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ pending_activities }}</p>
-                </div>
-                <div class="bg-red-100 p-3 rounded-lg">
-                    <i class="fas fa-exclamation-circle text-red-600 text-2xl"></i>
+            <!-- Oportunidades Ganhas -->
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 border-l-4 border-green-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Ganhas</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ won_opportunities }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ won_value|format_currency }}
+                        </p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-lg">
+                        <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        {% if is_admin %}
-        <!-- Users Count (Admin Only) -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-gray-600 text-sm font-medium">Usuários Ativos</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ users_count }}</p>
-                </div>
-                <div class="bg-purple-100 p-3 rounded-lg">
-                    <i class="fas fa-users text-purple-600 text-2xl"></i>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Recent Opportunities -->
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h2 class="text-2xl font-bold text-gray-900">Oportunidades Recentes</h2>
-                <a href="{% url 'prospecta:opportunities_list' %}" class="text-blue-600 hover:text-blue-700 font-medium">
-                    Ver todas <i class="fas fa-arrow-right ml-2"></i>
-                </a>
-            </div>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Título</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Cliente</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Valor</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Responsável</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ação</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for opportunity in recent_opportunities %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm text-gray-900">{{ opportunity.title }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ opportunity.client.name }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-900 font-semibold">
-                            R$ {{ opportunity.value_brl|floatformat:2 }}
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                            {% if opportunity.status == 'aberta' %}
-                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Aberta</span>
-                            {% elif opportunity.status == 'em_andamento' %}
-                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Em Andamento</span>
-                            {% elif opportunity.status == 'ganha' %}
-                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Ganha</span>
-                            {% elif opportunity.status == 'perdida' %}
-                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Perdida</span>
+            <!-- Taxa de Conversão -->
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6 border-l-4 border-purple-600">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Taxa Conversão</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ conversion_rate }}%</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {% if conversion_rate > 20 %}
+                                <span class="text-green-600"><i class="fas fa-arrow-up mr-1"></i>Excelente</span>
+                            {% elif conversion_rate > 10 %}
+                                <span class="text-blue-600"><i class="fas fa-arrow-right mr-1"></i>Bom</span>
                             {% else %}
-                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelada</span>
+                                <span class="text-orange-600"><i class="fas fa-arrow-down mr-1"></i>Atenção</span>
                             {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">
-                            {{ opportunity.responsible_user.get_full_name }}
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                            <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" class="text-blue-600 hover:text-blue-700 font-medium">
-                                Ver
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                            Nenhuma oportunidade encontrada
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </p>
+                    </div>
+                    <div class="bg-purple-100 p-4 rounded-lg">
+                        <i class="fas fa-chart-pie text-purple-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {% if is_seller %}
-        <a href="{% url 'prospecta:opportunity_create' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-blue-600">
-            <div class="flex items-center mb-4">
-                <div class="bg-blue-100 p-3 rounded-lg mr-4">
-                    <i class="fas fa-plus text-blue-600 text-xl"></i>
+        <!-- Secondary KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Atividades Pendentes -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Pendentes</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ pending_activities }}</p>
+                        <div class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-clock text-orange-500 mr-1"></i>Ações urgentes
+                        </div>
+                    </div>
+                    <div class="bg-orange-100 p-3 rounded-lg">
+                        <i class="fas fa-hourglass-start text-orange-600 text-xl"></i>
+                    </div>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">Nova Oportunidade</h3>
             </div>
-            <p class="text-gray-600 text-sm">Crie uma nova oportunidade para sua carteira de vendas</p>
-        </a>
-        {% endif %}
 
-        {% if is_manager %}
-        <a href="{% url 'prospecta:client_create' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-green-600">
-            <div class="flex items-center mb-4">
-                <div class="bg-green-100 p-3 rounded-lg mr-4">
-                    <i class="fas fa-user-plus text-green-600 text-xl"></i>
+            <!-- Atividades Pendentes de Aprovação -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Aguardando Aprovação</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ activities_pending_approval }}</p>
+                        <div class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-check-square text-blue-500 mr-1"></i>Revisar
+                        </div>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="fas fa-check-square text-blue-600 text-xl"></i>
+                    </div>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">Novo Cliente</h3>
             </div>
-            <p class="text-gray-600 text-sm">Adicione um novo cliente à base de dados</p>
-        </a>
-        {% endif %}
 
-        <a href="{% url 'prospecta:activities_list' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-purple-600">
-            <div class="flex items-center mb-4">
-                <div class="bg-purple-100 p-3 rounded-lg mr-4">
-                    <i class="fas fa-tasks text-purple-600 text-xl"></i>
+            <!-- Atividades em Progresso -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Em Progresso</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ in_progress_activities }}</p>
+                        <div class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-spinner text-yellow-500 mr-1"></i>Trabalhando
+                        </div>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-lg">
+                        <i class="fas fa-spinner text-yellow-600 text-xl"></i>
+                    </div>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">Minhas Atividades</h3>
             </div>
-            <p class="text-gray-600 text-sm">{{ pending_activities }} atividades pendentes</p>
-        </a>
 
+            <!-- Atividades Bloqueadas -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Bloqueadas</p>
+                        <p class="text-2xl font-bold text-gray-900 mt-1">{{ blocked_activities }}</p>
+                        <div class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-ban text-red-500 mr-1"></i>Resolver
+                        </div>
+                    </div>
+                    <div class="bg-red-100 p-3 rounded-lg">
+                        <i class="fas fa-ban text-red-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Only Metrics -->
         {% if is_admin %}
-        <a href="{% url 'prospecta:reports' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-orange-600">
-            <div class="flex items-center mb-4">
-                <div class="bg-orange-100 p-3 rounded-lg mr-4">
-                    <i class="fas fa-chart-bar text-orange-600 text-xl"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <!-- Users Count -->
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-md p-6 border border-indigo-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Usuários Cadastrados</p>
+                        <p class="text-2xl font-bold text-indigo-900 mt-1">{{ users_count }}</p>
+                        <p class="text-xs text-indigo-600 mt-1">{{ active_users }} ativos</p>
+                    </div>
+                    <div class="bg-indigo-200 p-3 rounded-lg">
+                        <i class="fas fa-users text-indigo-600 text-xl"></i>
+                    </div>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">Relatórios</h3>
             </div>
-            <p class="text-gray-600 text-sm">Visualize relatórios de vendas e desempenho</p>
-        </a>
+
+            <!-- Open Opportunities -->
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg shadow-md p-6 border border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Oportunidades Abertas</p>
+                        <p class="text-2xl font-bold text-blue-900 mt-1">{{ open_opportunities }}</p>
+                        <p class="text-xs text-blue-600 mt-1">Novas leads</p>
+                    </div>
+                    <div class="bg-blue-200 p-3 rounded-lg">
+                        <i class="fas fa-envelope-open text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lost Opportunities -->
+            <div class="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg shadow-md p-6 border border-red-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Oportunidades Perdidas</p>
+                        <p class="text-2xl font-bold text-red-900 mt-1">{{ lost_opportunities }}</p>
+                        <p class="text-xs text-red-600 mt-1">Analisar motivos</p>
+                    </div>
+                    <div class="bg-red-200 p-3 rounded-lg">
+                        <i class="fas fa-times-circle text-red-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% endif %}
+
+        <!-- Main Content - Two Columns -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Column: Recent Opportunities and Upcoming Activities -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Recent Opportunities -->
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-900">Oportunidades Recentes</h2>
+                        <a href="{% url 'prospecta:opportunities_list' %}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                            Ver todas <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        {% if recent_opportunities %}
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Título</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Valor</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                {% for opp in recent_opportunities %}
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ opp.title }}</div>
+                                        <div class="text-xs text-gray-500">{{ opp.client.name }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                                        {{ opp.value_brl|format_currency }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        {% if opp.status == 'aberta' %}
+                                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Aberta</span>
+                                        {% elif opp.status == 'em_andamento' %}
+                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Em Progresso</span>
+                                        {% elif opp.status == 'ganha' %}
+                                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Ganha</span>
+                                        {% elif opp.status == 'perdida' %}
+                                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Perdida</span>
+                                        {% else %}
+                                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelada</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a href="{% url 'prospecta:opportunity_detail' pk=opp.pk %}" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                                            Ver <i class="fas fa-arrow-right ml-1"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <div class="p-6 text-center text-gray-500">
+                            <i class="fas fa-inbox text-3xl text-gray-300 mb-2"></i>
+                            <p>Nenhuma oportunidade encontrada</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Upcoming Activities -->
+                <div class="bg-white rounded-lg shadow-md">
+                    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-900">Próximas Atividades</h2>
+                        <a href="{% url 'prospecta:activities_list' %}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                            Ver todas <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                    
+                    {% if upcoming_activities %}
+                    <div class="space-y-2 p-6">
+                        {% for activity in upcoming_activities %}
+                        <div class="flex items-start p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition border-l-4 
+                            {% if activity.status == 'pendente' %}
+                                border-red-500
+                            {% elif activity.status == 'em_progresso' %}
+                                border-yellow-500
+                            {% else %}
+                                border-blue-500
+                            {% endif %}">
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900">{{ activity.title }}</p>
+                                <p class="text-sm text-gray-600">{{ activity.description|truncatewords:10 }}</p>
+                                <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                    <span><i class="fas fa-user mr-1"></i>{{ activity.assigned_to.get_full_name }}</span>
+                                    <span>
+                                        {% if activity.status == 'pendente' %}
+                                            <span class="px-2 py-0.5 bg-red-100 text-red-800 rounded">Pendente</span>
+                                        {% elif activity.status == 'em_progresso' %}
+                                            <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded">Em Progresso</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-6 text-center text-gray-500">
+                        <i class="fas fa-check-circle text-3xl text-gray-300 mb-2"></i>
+                        <p>Nenhuma atividade próxima</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <!-- Right Column: Status Distribution and Quick Actions -->
+            <div class="space-y-6">
+                
+                <!-- Pipeline Distribution -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">
+                        <i class="fas fa-chart-bar text-blue-600 mr-2"></i>Distribuição de Pipeline
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        {% for item in pipeline_status_distribution %}
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm font-medium text-gray-700">{{ item.status }}</span>
+                                <span class="text-sm font-bold text-gray-900">{{ item.count }}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r 
+                                    {% if item.status == 'Aberta' %}
+                                        from-blue-400 to-blue-600
+                                    {% elif item.status == 'Em Andamento' %}
+                                        from-yellow-400 to-yellow-600
+                                    {% elif item.status == 'Ganha' %}
+                                        from-green-400 to-green-600
+                                    {% else %}
+                                        from-red-400 to-red-600
+                                    {% endif %}
+                                    h-2 rounded-full" style="width: {{ item.percentage|add:1 }}%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>{{ item.percentage }}%</span>
+                                <span>R$ {{ item.value|floatformat:0|stringformat:",.0f" }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">
+                        <i class="fas fa-bolt text-yellow-600 mr-2"></i>Ações Rápidas
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        {% if is_seller or is_manager %}
+                        <a href="{% url 'prospecta:opportunity_create' %}" class="block w-full p-3 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm">
+                            <i class="fas fa-plus mr-2"></i>Nova Oportunidade
+                        </a>
+                        {% endif %}
+
+                        {% if is_manager %}
+                        <a href="{% url 'prospecta:client_create' %}" class="block w-full p-3 text-center bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm">
+                            <i class="fas fa-user-plus mr-2"></i>Novo Cliente
+                        </a>
+                        {% endif %}
+
+                        <a href="{% url 'prospecta:activities_list' %}" class="block w-full p-3 text-center bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium text-sm">
+                            <i class="fas fa-tasks mr-2"></i>Minhas Atividades
+                        </a>
+
+                        {% if is_admin %}
+                        <a href="{% url 'prospecta:reports' %}" class="block w-full p-3 text-center bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium text-sm">
+                            <i class="fas fa-chart-bar mr-2"></i>Relatórios
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Activity Summary -->
+                <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg shadow-md p-6 border border-purple-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">
+                        <i class="fas fa-tasks text-purple-600 mr-2"></i>Resumo de Atividades
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-700">Total</span>
+                            <span class="font-bold text-gray-900">{{ activities_count }}</span>
+                        </div>
+                        <div class="h-px bg-gray-200"></div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-700"><i class="fas fa-check text-green-600 mr-2"></i>Concluídas</span>
+                            <span class="font-bold text-green-600">{{ completed_activities }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-700"><i class="fas fa-spinner text-yellow-600 mr-2"></i>Em Progresso</span>
+                            <span class="font-bold text-yellow-600">{{ in_progress_activities }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-700"><i class="fas fa-hourglass-start text-orange-600 mr-2"></i>Pendentes</span>
+                            <span class="font-bold text-orange-600">{{ pending_activities }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-700"><i class="fas fa-ban text-red-600 mr-2"></i>Bloqueadas</span>
+                            <span class="font-bold text-red-600">{{ blocked_activities }}</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 </div>
+
 {% endblock %}

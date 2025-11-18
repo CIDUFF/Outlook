@@ -1,0 +1,40 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Deletar Contato - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Confirmar Exclusão</h1>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p class="text-red-800 font-medium">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Tem certeza que deseja deletar este contato?
+                </p>
+                <p class="text-sm text-red-700 mt-2">Esta ação é irreversível!</p>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <p class="text-gray-700 mb-2"><strong>Contato:</strong> {{ contact.name }}</p>
+                <p class="text-gray-700 mb-2"><strong>Email:</strong> {{ contact.email|default:"Não informado" }}</p>
+                <p class="text-gray-700 mb-2"><strong>Telefone:</strong> {{ contact.phone|default:"Não informado" }}</p>
+                <p class="text-gray-700"><strong>Cliente:</strong> {{ contact.client.company_name }}</p>
+            </div>
+
+            <form method="post" class="flex gap-4">
+                {% csrf_token %}
+                <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-trash mr-2"></i>Deletar
+                </button>
+                <a href="{% url 'prospecta:client_detail' contact.client.pk %}" 
+                   class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

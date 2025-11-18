@@ -1,0 +1,120 @@
+{% extends "prospecta/base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">{{ page_title }}</h1>
+        <a href="{% url 'prospecta:admin_users_list' %}" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 rounded-lg {% if message.tags %}bg-{{ message.tags }}-100 text-{{ message.tags }}-800 border border-{{ message.tags }}-200{% else %}bg-green-100 text-green-800 border border-green-200{% endif %}">
+                <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Username -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user"></i> Nome de Usuário <span class="text-red-600">*</span>
+                    </label>
+                    <input type="text" name="username" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                           placeholder="ex: joao.silva">
+                    <p class="text-xs text-gray-500 mt-1">Identificador único para login</p>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope"></i> Email <span class="text-red-600">*</span>
+                    </label>
+                    <input type="email" name="email" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                           placeholder="ex: joao@empresa.com">
+                </div>
+
+                <!-- First Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user"></i> Primeiro Nome <span class="text-red-600">*</span>
+                    </label>
+                    <input type="text" name="first_name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                           placeholder="ex: João">
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user"></i> Sobrenome
+                    </label>
+                    <input type="text" name="last_name"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                           placeholder="ex: Silva">
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock"></i> Senha <span class="text-red-600">*</span>
+                    </label>
+                    <input type="password" name="password" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Use uma senha forte com letras, números e caracteres especiais</p>
+                </div>
+
+                <!-- Role -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-briefcase"></i> Papel <span class="text-red-600">*</span>
+                    </label>
+                    <select name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        <option value="">-- Selecione um papel --</option>
+                        {% for value, label in role_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Role Description -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p class="text-sm text-blue-800 font-medium mb-2">
+                    <i class="fas fa-info-circle"></i> Papéis Disponíveis:
+                </p>
+                <ul class="text-sm text-blue-700 space-y-1">
+                    <li><strong>Admin:</strong> Acesso total ao sistema e painel administrativo</li>
+                    <li><strong>Gerente:</strong> Gerencia vendedores e oportunidades</li>
+                    <li><strong>Vendedor:</strong> Cria e gerencia suas próprias oportunidades</li>
+                    <li><strong>Analista:</strong> Visualização e análise de dados</li>
+                </ul>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex gap-4 pt-6 border-t">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition">
+                    <i class="fas fa-user-plus"></i> Criar Usuário
+                </button>
+                <a href="{% url 'prospecta:admin_users_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-900 font-medium py-2 px-6 rounded-lg transition">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

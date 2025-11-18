@@ -1,0 +1,80 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Contato - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        {% if contact %}
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Editar Contato</h1>
+        {% else %}
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Novo Contato</h1>
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo *</label>
+                    <input type="text" name="name" 
+                           value="{% if contact %}{{ contact.name }}{% endif %}" 
+                           required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" name="email" 
+                               value="{% if contact %}{{ contact.email }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
+                        <input type="tel" name="phone" 
+                               value="{% if contact %}{{ contact.phone }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Posição/Cargo</label>
+                    <input type="text" name="position" 
+                           value="{% if contact %}{{ contact.position }}{% endif %}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                    <textarea name="notes" rows="4"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{% if contact %}{{ contact.notes }}{% endif %}</textarea>
+                </div>
+
+                {% if contact %}
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-700 mb-1"><strong>Cliente:</strong> {{ contact.client.company_name }}</p>
+                        <p class="text-sm text-gray-700"><strong>Criado em:</strong> {{ contact.created_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                {% else %}
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-gray-700"><strong>Cliente:</strong> {{ client.company_name }}</p>
+                    </div>
+                {% endif %}
+
+                <div class="flex gap-4 pt-6 border-t border-gray-200">
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save mr-2"></i>Salvar Contato
+                    </button>
+                    <a href="{% if contact %}{% url 'prospecta:client_detail' contact.client.pk %}{% else %}{% url 'prospecta:client_detail' client.pk %}{% endif %}" 
+                       class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

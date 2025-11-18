@@ -1,14 +1,10 @@
 from django.contrib import admin
 from .models import (
     Client, Contact, SalesModel, Opportunity, Stage, Activity,
-    OpportunityHistory, StageHistory, ActivityHistory, UserProfile
+    OpportunityHistory, StageHistory, ActivityHistory, UserProfile,
+    OpportunityDocument, ActivityAttachment, Meeting, GoogleCalendarIntegration
 )
 
-from django.contrib import admin
-from .models import (
-    Client, Contact, SalesModel, Opportunity, Stage, Activity,
-    OpportunityHistory, StageHistory, ActivityHistory, UserProfile
-)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -31,12 +27,14 @@ class UserProfileAdmin(admin.ModelAdmin):
         }),
     )
 
+
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ('name', 'cnpj', 'email', 'created_at')
     search_fields = ('name', 'cnpj', 'email')
     list_filter = ('created_at',)
     readonly_fields = ('id', 'created_at')
+
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
@@ -45,6 +43,7 @@ class ContactAdmin(admin.ModelAdmin):
     list_filter = ('created_at', 'client')
     readonly_fields = ('id', 'created_at')
 
+
 @admin.register(SalesModel)
 class SalesModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_at')
@@ -52,12 +51,15 @@ class SalesModelAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     readonly_fields = ('id', 'created_at')
 
+
 @admin.register(Opportunity)
 class OpportunityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'client', 'status', 'value_brl', 'responsible_user', 'created_at')
+    list_display = ('title', 'client', 'status', 'value_brl',
+                    'responsible_user', 'created_at')
     search_fields = ('title', 'client__name')
     list_filter = ('status', 'created_at', 'responsible_user')
     readonly_fields = ('id', 'created_at', 'updated_at')
+
 
 @admin.register(Stage)
 class StageAdmin(admin.ModelAdmin):
@@ -67,12 +69,14 @@ class StageAdmin(admin.ModelAdmin):
     ordering = ('order',)
     readonly_fields = ('id', 'created_at', 'updated_at')
 
+
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
     list_display = ('title', 'stage', 'status', 'assigned_to', 'created_at')
     search_fields = ('title', 'assigned_to__username')
     list_filter = ('status', 'created_at', 'approved')
     readonly_fields = ('id', 'created_at', 'updated_at')
+
 
 @admin.register(OpportunityHistory)
 class OpportunityHistoryAdmin(admin.ModelAdmin):
@@ -82,6 +86,7 @@ class OpportunityHistoryAdmin(admin.ModelAdmin):
     readonly_fields = ('id', 'changed_at', 'change_details')
     can_delete = False
 
+
 @admin.register(StageHistory)
 class StageHistoryAdmin(admin.ModelAdmin):
     list_display = ('stage', 'change_type', 'changed_by', 'changed_at')
@@ -90,6 +95,7 @@ class StageHistoryAdmin(admin.ModelAdmin):
     readonly_fields = ('id', 'changed_at', 'change_details')
     can_delete = False
 
+
 @admin.register(ActivityHistory)
 class ActivityHistoryAdmin(admin.ModelAdmin):
     list_display = ('activity', 'change_type', 'changed_by', 'changed_at')
@@ -97,3 +103,100 @@ class ActivityHistoryAdmin(admin.ModelAdmin):
     list_filter = ('change_type', 'changed_at')
     readonly_fields = ('id', 'changed_at', 'change_details')
     can_delete = False
+
+
+# ============================================================================
+# DOCUMENTOS E ANEXOS
+# ============================================================================
+
+@admin.register(OpportunityDocument)
+class OpportunityDocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'opportunity', 'document_type',
+                    'uploaded_by', 'is_public', 'created_at')
+    search_fields = ('title', 'opportunity__title', 'description')
+    list_filter = ('document_type', 'is_public', 'created_at')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Informações', {
+            'fields': ('title', 'opportunity', 'document_type', 'description')
+        }),
+        ('Arquivo', {
+            'fields': ('file', 'is_public')
+        }),
+        ('Metadados', {
+            'fields': ('uploaded_by', 'id', 'created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(ActivityAttachment)
+class ActivityAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('activity', 'uploaded_by', 'created_at')
+    search_fields = ('activity__title', 'description')
+    list_filter = ('created_at',)
+    readonly_fields = ('id', 'created_at')
+
+
+# ============================================================================
+# AGENDA E REUNIÕES
+# ============================================================================
+
+@admin.register(Meeting)
+class MeetingAdmin(admin.ModelAdmin):
+    list_display = ('title', 'opportunity', 'meeting_type', 'status',
+                    'start_datetime', 'organizer', 'synced_with_google')
+    search_fields = ('title', 'opportunity__title', 'description')
+    list_filter = ('meeting_type', 'status',
+                   'synced_with_google', 'start_datetime')
+    readonly_fields = ('id', 'google_event_id', 'created_at', 'updated_at')
+    filter_horizontal = ('attendees',)
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('title', 'opportunity', 'description', 'meeting_type', 'status')
+        }),
+        ('Data e Hora', {
+            'fields': ('start_datetime', 'end_datetime')
+        }),
+        ('Participantes', {
+            'fields': ('organizer', 'attendees')
+        }),
+        ('Local/Link', {
+            'fields': ('location',)
+        }),
+        ('Notas', {
+            'fields': ('notes', 'action_items')
+        }),
+        ('Google Calendar', {
+            'fields': ('google_event_id', 'synced_with_google'),
+            'classes': ('collapse',)
+        }),
+        ('Metadados', {
+            'fields': ('id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(GoogleCalendarIntegration)
+class GoogleCalendarIntegrationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'calendar_id', 'is_active',
+                    'token_expiry', 'created_at')
+    search_fields = ('user__username', 'user__email')
+    list_filter = ('is_active', 'created_at')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Usuário', {
+            'fields': ('user', 'is_active')
+        }),
+        ('Tokens OAuth', {
+            'fields': ('access_token', 'refresh_token', 'token_expiry'),
+            'classes': ('collapse',)
+        }),
+        ('Configurações', {
+            'fields': ('calendar_id',)
+        }),
+        ('Metadados', {
+            'fields': ('id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

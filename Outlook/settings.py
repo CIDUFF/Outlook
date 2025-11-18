@@ -48,8 +48,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
-    'oauth2_provider',
-    'social_django',
 
     # Local apps
     'prospecta',
@@ -95,6 +93,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
                 'social_django.context_processors.backends',
+                'prospecta.context_processors.auth_context',
             ],
         },
     },
@@ -169,8 +168,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
-    'social_core.backends.google.GoogleOAuth2',
-    'social_core.backends.github.GithubOAuth2',
 ]
 
 # Django-allauth settings
@@ -179,9 +176,11 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
-SOCIALACCOUNT_AUTO_SIGNUP = True
+# Desabilita auto-signup para evitar usuários duplicados
+SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
-SOCIALACCOUNT_EMAIL_REQUIRED = False
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+SOCIALACCOUNT_ADAPTER = 'prospecta.adapters.CustomSocialAccountAdapter'
 
 LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'prospecta:dashboard'

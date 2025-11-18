@@ -1,0 +1,201 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}Dashboard - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-4xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-600 mt-2">Bem-vindo, {{ user.get_full_name }}!</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Pipeline Total -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Pipeline Total</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">
+                        R$ {{ total_pipeline|floatformat:0 }}
+                    </p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-lg">
+                    <i class="fas fa-coins text-blue-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Oportunidades -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Oportunidades</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ opportunities_count }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-lg">
+                    <i class="fas fa-handshake text-green-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Oportunidades Ganhas -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Oportunidades Ganhas</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ won_opportunities }}</p>
+                </div>
+                <div class="bg-yellow-100 p-3 rounded-lg">
+                    <i class="fas fa-check-circle text-yellow-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Atividades Pendentes -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Atividades Pendentes</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ pending_activities }}</p>
+                </div>
+                <div class="bg-red-100 p-3 rounded-lg">
+                    <i class="fas fa-exclamation-circle text-red-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        {% if is_admin %}
+        <!-- Users Count (Admin Only) -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600 text-sm font-medium">Usuários Ativos</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ users_count }}</p>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-lg">
+                    <i class="fas fa-users text-purple-600 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Opportunities -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-900">Oportunidades Recentes</h2>
+                <a href="{% url 'prospecta:opportunities_list' %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                    Ver todas <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Título</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Cliente</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Valor</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Responsável</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ação</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for opportunity in recent_opportunities %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900">{{ opportunity.title }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ opportunity.client.name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900 font-semibold">
+                            R$ {{ opportunity.value_brl|floatformat:2 }}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            {% if opportunity.status == 'aberta' %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Aberta</span>
+                            {% elif opportunity.status == 'em_andamento' %}
+                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Em Andamento</span>
+                            {% elif opportunity.status == 'ganha' %}
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Ganha</span>
+                            {% elif opportunity.status == 'perdida' %}
+                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Perdida</span>
+                            {% else %}
+                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelada</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {{ opportunity.responsible_user.get_full_name }}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            Nenhuma oportunidade encontrada
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% if is_seller %}
+        <a href="{% url 'prospecta:opportunity_create' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-blue-600">
+            <div class="flex items-center mb-4">
+                <div class="bg-blue-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-plus text-blue-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Nova Oportunidade</h3>
+            </div>
+            <p class="text-gray-600 text-sm">Crie uma nova oportunidade para sua carteira de vendas</p>
+        </a>
+        {% endif %}
+
+        {% if is_manager %}
+        <a href="{% url 'prospecta:client_create' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-green-600">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-user-plus text-green-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Novo Cliente</h3>
+            </div>
+            <p class="text-gray-600 text-sm">Adicione um novo cliente à base de dados</p>
+        </a>
+        {% endif %}
+
+        <a href="{% url 'prospecta:activities_list' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-purple-600">
+            <div class="flex items-center mb-4">
+                <div class="bg-purple-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-tasks text-purple-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Minhas Atividades</h3>
+            </div>
+            <p class="text-gray-600 text-sm">{{ pending_activities }} atividades pendentes</p>
+        </a>
+
+        {% if is_admin %}
+        <a href="{% url 'prospecta:reports' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer border-l-4 border-orange-600">
+            <div class="flex items-center mb-4">
+                <div class="bg-orange-100 p-3 rounded-lg mr-4">
+                    <i class="fas fa-chart-bar text-orange-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Relatórios</h3>
+            </div>
+            <p class="text-gray-600 text-sm">Visualize relatórios de vendas e desempenho</p>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

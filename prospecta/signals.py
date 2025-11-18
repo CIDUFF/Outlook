@@ -3,13 +3,29 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import (
     Opportunity, Stage, Activity,
-    OpportunityHistory, StageHistory, ActivityHistory
+    OpportunityHistory, StageHistory, ActivityHistory, UserProfile
 )
 from .middleware import get_current_user
 import json
+from uuid import UUID
+from decimal import Decimal
+from datetime import datetime, date
 
 # Armazenar valores anteriores para comparação
 _previous_values = {}
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """Encoder customizado para lidar com UUID, Decimal e datas"""
+
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            return str(obj)
+        elif isinstance(obj, (Decimal, float)):
+            return str(obj)
+        elif isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 @receiver(pre_save, sender=Opportunity)
@@ -44,7 +60,7 @@ def track_opportunity_changes(sender, instance, created, **kwargs):
     else:
         key = f'opportunity_{instance.pk}'
         old_values = _previous_values.get(key, {})
-        
+
         changes = {}
         for field in old_values.keys():
             old_val = old_values.get(field)
@@ -52,33 +68,37 @@ def track_opportunity_changes(sender, instance, created, **kwargs):
             if field == 'status':
                 new_val = instance.status
             elif field == 'value_brl':
-                new_val = str(instance.value_brl) if instance.value_brl else None
+                new_val = str(
+                    instance.value_brl) if instance.value_brl else None
             elif field == 'expected_delivery_date':
-                new_val = str(instance.expected_delivery_date) if instance.expected_delivery_date else None
+                new_val = str(
+                    instance.expected_delivery_date) if instance.expected_delivery_date else None
             elif field == 'delivery_date':
-                new_val = str(instance.delivery_date) if instance.delivery_date else None
+                new_val = str(
+                    instance.delivery_date) if instance.delivery_date else None
             elif field == 'responsible_user':
                 new_val = instance.responsible_user_id
             elif field == 'sales_model':
                 new_val = instance.sales_model_id
-            
+
             if old_val != new_val:
                 changes[field] = {
                     'de': old_val,
                     'para': new_val
                 }
-        
+
         if not changes:
             return
-        
+
         change_type = 'ATUALIZADA'
         change_details = changes
-    
+
     OpportunityHistory.objects.create(
         opportunity=instance,
         changed_by=get_current_user(),
         change_type=change_type,
-        change_details=json.dumps(change_details, ensure_ascii=False)
+        change_details=json.dumps(
+            change_details, ensure_ascii=False, cls=CustomJSONEncoder)
     )
 
 
@@ -108,7 +128,7 @@ def track_stage_changes(sender, instance, created, **kwargs):
     else:
         key = f'stage_{instance.pk}'
         old_values = _previous_values.get(key, {})
-        
+
         changes = {}
         if old_values.get('name') != instance.name:
             changes['nome'] = {
@@ -120,18 +140,19 @@ def track_stage_changes(sender, instance, created, **kwargs):
                 'de': old_values.get('order'),
                 'para': instance.order
             }
-        
+
         if not changes:
             return
-        
+
         change_type = 'ATUALIZADA'
         change_details = changes
-    
+
     StageHistory.objects.create(
         stage=instance,
         changed_by=get_current_user(),
         change_type=change_type,
-        change_details=json.dumps(change_details, ensure_ascii=False)
+        change_details=json.dumps(
+            change_details, ensure_ascii=False, cls=CustomJSONEncoder)
     )
 
 
@@ -165,7 +186,7 @@ def track_activity_changes(sender, instance, created, **kwargs):
     else:
         key = f'activity_{instance.pk}'
         old_values = _previous_values.get(key, {})
-        
+
         changes = {}
         if old_values.get('title') != instance.title:
             changes['titulo'] = {
@@ -187,16 +208,38 @@ def track_activity_changes(sender, instance, created, **kwargs):
                 'de': old_values.get('approved'),
                 'para': instance.approved
             }
-        
+
         if not changes:
             return
-        
+
         change_type = 'ATUALIZADA'
         change_details = changes
-    
+
     ActivityHistory.objects.create(
         activity=instance,
         changed_by=get_current_user(),
         change_type=change_type,
-        change_details=json.dumps(change_details, ensure_ascii=False)
+        change_details=json.dumps(
+            change_details, ensure_ascii=False, cls=CustomJSONEncoder)
     )
+
+
+# ============================================================================
+# USER PROFILE SIGNALS
+# ============================================================================
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Criar UserProfile automaticamente quando um novo User é criado"""
+    if created:
+        from .models import UserProfile
+        UserProfile.objects.get_or_create(
+            user=instance, defaults={'role': 'visitante'})
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Salvar UserProfile quando User é salvo"""
+    from .models import UserProfile
+    UserProfile.objects.get_or_create(
+        user=instance, defaults={'role': 'visitante'})

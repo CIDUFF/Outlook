@@ -1,0 +1,172 @@
+{% extends 'prospecta/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Associar Reunião à Atividade - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
+    <div class="max-w-2xl mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center gap-3 mb-2">
+                <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Voltar
+                </a>
+            </div>
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">
+                <i class="fas fa-link mr-2 text-pink-600"></i>Associar Reunião à Atividade
+            </h1>
+            <p class="text-slate-600">Oportunidade: <span class="font-semibold">{{ opportunity.title }}</span></p>
+        </div>
+
+        <!-- Activity Info -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Atividade</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-slate-600 font-medium">Título</p>
+                    <p class="text-slate-900 font-semibold">{{ activity.title }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 font-medium">Etapa</p>
+                    <p class="text-slate-900">{{ activity.stage.title }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 font-medium">Status</p>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if activity.status == 'pendente' %}bg-yellow-100 text-yellow-800{% elif activity.status == 'em_andamento' %}bg-blue-100 text-blue-800{% elif activity.status == 'concluida' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                        {{ activity.get_status_display }}
+                    </span>
+                </div>
+                <div>
+                    <p class="text-sm text-slate-600 font-medium">Data Esperada</p>
+                    <p class="text-slate-900">{{ activity.expected_date|default:"Não definida" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            {% csrf_token %}
+
+            <h2 class="text-lg font-semibold text-slate-900 mb-4">Selecione uma Reunião</h2>
+
+            {% if current_meeting %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p class="text-sm text-blue-900 font-medium mb-2">Reunião Atualmente Associada</p>
+                <div class="bg-white border border-blue-200 rounded p-3">
+                    <p class="font-semibold text-slate-900">{{ current_meeting.title }}</p>
+                    <p class="text-sm text-slate-600 mt-1">
+                        <i class="fas fa-calendar mr-2 text-indigo-600"></i>
+                        {{ current_meeting.start_datetime|date:"d/m/Y H:i" }} - {{ current_meeting.end_datetime|date:"H:i" }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Meetings List -->
+            <div class="space-y-3 mb-6">
+                {% if meetings %}
+                    <!-- Option to remove meeting association -->
+                    <label class="flex items-start p-4 border-2 border-slate-200 rounded-lg hover:border-slate-300 cursor-pointer transition-colors">
+                        <input type="radio" name="meeting_id" value="" class="mt-1" {% if not current_meeting %}checked{% endif %}>
+                        <span class="ml-3">
+                            <span class="block font-medium text-slate-700">Nenhuma Reunião</span>
+                            <span class="block text-sm text-slate-500">Remover a associação de reunião desta atividade</span>
+                        </span>
+                    </label>
+
+                    {% for meeting in meetings %}
+                    <label class="flex items-start p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-300 cursor-pointer transition-colors {% if current_meeting.id == meeting.id %}border-indigo-500 bg-indigo-50{% endif %}">
+                        <input type="radio" name="meeting_id" value="{{ meeting.id }}" class="mt-1" {% if current_meeting.id == meeting.id %}checked{% endif %}>
+                        <span class="ml-3 flex-1">
+                            <span class="block font-semibold text-slate-900">{{ meeting.title }}</span>
+                            
+                            <!-- Meeting Details -->
+                            <div class="mt-2 space-y-1 text-sm text-slate-600">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar text-indigo-600 w-4"></i>
+                                    <span>{{ meeting.start_datetime|date:"d/m/Y H:i" }} - {{ meeting.end_datetime|date:"H:i" }}</span>
+                                </div>
+
+                                {% if meeting.location %}
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt text-red-600 w-4"></i>
+                                    <span>{{ meeting.location }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if meeting.meeting_type %}
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-video text-purple-600 w-4"></i>
+                                    <span>{{ meeting.get_meeting_type_display }}</span>
+                                </div>
+                                {% endif %}
+
+                                <!-- Status Badge -->
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-slate-400 w-4"></i>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if meeting.status == 'agendada' %}bg-blue-100 text-blue-800{% elif meeting.status == 'em_andamento' %}bg-purple-100 text-purple-800{% elif meeting.status == 'concluida' %}bg-green-100 text-green-800{% elif meeting.status == 'cancelada' %}bg-red-100 text-red-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                        {{ meeting.get_status_display }}
+                                    </span>
+                                </div>
+
+                                <!-- Organizer -->
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-user text-slate-400 w-4"></i>
+                                    <span>Organizador: {{ meeting.organizer.get_full_name|default:meeting.organizer.username }}</span>
+                                </div>
+
+                                {% if meeting.description %}
+                                <div class="mt-2 pt-2 border-t border-slate-200">
+                                    <p class="text-slate-600">{{ meeting.description|truncatewords:15 }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </span>
+
+                        <!-- Google Calendar Indicator -->
+                        {% if meeting.synced_with_google %}
+                        <div class="ml-3 flex-shrink-0">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <i class="fab fa-google mr-1"></i>Google Calendar
+                            </span>
+                        </div>
+                        {% endif %}
+                    </label>
+                    {% endfor %}
+                {% else %}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p class="text-yellow-900">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Nenhuma reunião encontrada para esta oportunidade. 
+                            <a href="{% url 'prospecta:create_meeting' pk=opportunity.pk %}" class="font-semibold hover:underline">Criar uma nova reunião</a>
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-6 border-t border-slate-200">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-save"></i>
+                    Salvar Associação
+                </button>
+                <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-medium py-2 px-4 rounded-lg transition-colors text-center">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+
+        <!-- Info Box -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+            <p class="text-sm text-blue-900">
+                <i class="fas fa-info-circle mr-2 text-blue-600"></i>
+                <strong>Dica:</strong> Associar uma reunião à atividade ajuda a rastrear quando a atividade foi discutida ou executada. Você pode desassociar a qualquer momento.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

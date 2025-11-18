@@ -1,0 +1,400 @@
+{% extends "prospecta/base.html" %}
+{% load static %}
+
+{% block title %}Ajuda e Documentação - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-question-circle text-blue-600 mr-3"></i>Ajuda e Documentação
+            </h1>
+            <p class="text-lg text-gray-600">Guia completo para administradores do PROSPECTA</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="mb-8 border-b border-gray-200 sticky top-0 bg-gradient-to-br from-slate-50 to-slate-100 py-4 -mx-4 px-4 sm:mx-0 sm:px-0 z-10">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="showTab('visao-geral')" class="tab-btn active px-4 py-2 font-medium text-sm rounded-t-lg bg-blue-600 text-white">
+                    <i class="fas fa-eye mr-2"></i>Visão Geral
+                </button>
+                <button onclick="showTab('fluxo')" class="tab-btn px-4 py-2 font-medium text-sm rounded-t-lg bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    <i class="fas fa-stream mr-2"></i>Fluxo de Oportunidades
+                </button>
+                <button onclick="showTab('permissoes')" class="tab-btn px-4 py-2 font-medium text-sm rounded-t-lg bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    <i class="fas fa-lock mr-2"></i>Permissões
+                </button>
+                <button onclick="showTab('usuarios')" class="tab-btn px-4 py-2 font-medium text-sm rounded-t-lg bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    <i class="fas fa-users mr-2"></i>Gerenciar Usuários
+                </button>
+                <button onclick="showTab('dicas')" class="tab-btn px-4 py-2 font-medium text-sm rounded-t-lg bg-gray-200 text-gray-700 hover:bg-gray-300">
+                    <i class="fas fa-lightbulb mr-2"></i>Dicas e Boas Práticas
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs Content -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            
+            <!-- Tab: Visão Geral -->
+            <div id="tab-visao-geral" class="tab-content p-6 sm:p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Bem-vindo ao PROSPECTA</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">
+                            <i class="fas fa-info-circle text-blue-600 mr-2"></i>O que é PROSPECTA?
+                        </h3>
+                        <p class="text-blue-800">PROSPECTA é um sistema de gestão de oportunidades e vendas que organiza todo o fluxo de vendas em etapas estruturadas com atividades e aprovações obrigatórias.</p>
+                    </div>
+                    
+                    <div class="bg-green-50 border-l-4 border-green-600 p-4 rounded">
+                        <h3 class="text-lg font-semibold text-green-900 mb-2">
+                            <i class="fas fa-target text-green-600 mr-2"></i>Objetivo Principal
+                        </h3>
+                        <p class="text-green-800">Garantir rastreabilidade total, responsabilidade clara e eficiência operacional em todo processo de vendas.</p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 p-6 rounded-lg mb-8">
+                    <h3 class="text-lg font-semibold text-amber-900 mb-4">
+                        <i class="fas fa-chart-line text-amber-600 mr-2"></i>Estatísticas Atuais do Sistema
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded border border-amber-200">
+                            <p class="text-gray-600 text-sm font-medium">Total de Usuários</p>
+                            <p class="text-3xl font-bold text-amber-600">{{ total_users }}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded border border-amber-200">
+                            <p class="text-gray-600 text-sm font-medium">Versão do Sistema</p>
+                            <p class="text-3xl font-bold text-amber-600">{{ system_version }}</p>
+                        </div>
+                        <div class="bg-white p-4 rounded border border-amber-200">
+                            <p class="text-gray-600 text-sm font-medium">Status</p>
+                            <p class="text-lg font-bold text-green-600">
+                                <i class="fas fa-check-circle mr-1"></i>Ativo
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <a href="{% url 'prospecta:admin_dashboard' %}" class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg text-center font-semibold transition">
+                        <i class="fas fa-tachometer-alt block mb-2 text-2xl"></i>Ir para Painel
+                    </a>
+                    <a href="{% url 'prospecta:admin_users_list' %}" class="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg text-center font-semibold transition">
+                        <i class="fas fa-users block mb-2 text-2xl"></i>Gerenciar Usuários
+                    </a>
+                    <a href="{% url 'prospecta:permissions_matrix' %}" class="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg text-center font-semibold transition">
+                        <i class="fas fa-lock block mb-2 text-2xl"></i>Matriz de Permissões
+                    </a>
+                    <a href="https://github.com/nextmarte/Outlook" target="_blank" class="bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-lg text-center font-semibold transition">
+                        <i class="fab fa-github block mb-2 text-2xl"></i>Documentação
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tab: Fluxo de Oportunidades -->
+            <div id="tab-fluxo" class="tab-content p-6 sm:p-8 hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Fluxo de Oportunidades</h2>
+                
+                <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg mb-8">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                        <i class="fas fa-diagram-project text-blue-600 mr-2"></i>Ciclo de Vida de uma Oportunidade
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center h-12 w-12 rounded-md bg-blue-600 text-white">
+                                    <i class="fas fa-plus"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold text-gray-900">1. Criação</h4>
+                                <p class="text-gray-700">Um vendedor, analista ou gerente cria uma nova oportunidade com dados do cliente, valor e data esperada.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center h-12 w-12 rounded-md bg-green-600 text-white">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold text-gray-900">2. Etapas (Stages)</h4>
+                                <p class="text-gray-700">A oportunidade é dividida em etapas sequenciais (ex: Prospecção → Qualificação → Negociação → Fechamento).</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center h-12 w-12 rounded-md bg-yellow-600 text-white">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold text-gray-900">3. Atividades</h4>
+                                <p class="text-gray-700">Cada etapa contém atividades específicas que precisam ser executadas (ex: Agendar reunião, Enviar proposta).</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center h-12 w-12 rounded-md bg-purple-600 text-white">
+                                    <i class="fas fa-check-double"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold text-gray-900">4. Aprovações</h4>
+                                <p class="text-gray-700">Algumas atividades requerem aprovação de um Gerente ou Admin antes de serem consideradas concluídas.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
+                                    <i class="fas fa-flag-checkered"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold text-gray-900">5. Conclusão</h4>
+                                <p class="text-gray-700">Quando todas as etapas são concluídas, a oportunidade é marcada como GANHA, PERDIDA ou CANCELADA.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-red-900 mb-4">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>Pontos Críticos
+                    </h3>
+                    <ul class="space-y-3 text-red-800">
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-red-600 mr-3 mt-1 flex-shrink-0"></i>
+                            <span><strong>Aprovações obrigatórias:</strong> Se uma atividade requer aprovação, ela não pode passar para a próxima etapa sem aprovação explícita.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-red-600 mr-3 mt-1 flex-shrink-0"></i>
+                            <span><strong>Sequência de etapas:</strong> As etapas devem ser completadas na ordem. Uma etapa não pode avançar enquanto a anterior não está 100% concluída.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-arrow-right text-red-600 mr-3 mt-1 flex-shrink-0"></i>
+                            <span><strong>Auditoria completa:</strong> Toda mudança é registrada com usuário, data e hora para rastreabilidade total.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab: Permissões -->
+            <div id="tab-permissoes" class="tab-content p-6 sm:p-8 hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Sistema de Permissões</h2>
+                
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Hierarquia de Roles</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+                            <h4 class="text-lg font-bold text-red-900">👑 ADMINISTRADOR (admin)</h4>
+                            <p class="text-red-800 mt-2">Acesso total ao sistema. Pode criar/editar/deletar qualquer recurso, gerenciar usuários e permissões.</p>
+                        </div>
+
+                        <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
+                            <h4 class="text-lg font-bold text-blue-900">👔 GERENTE (gerente)</h4>
+                            <p class="text-blue-800 mt-2">Gerencia seu time de vendedores. Pode criar/editar oportunidades, aprovar atividades e ver relatórios.</p>
+                        </div>
+
+                        <div class="bg-green-50 border-l-4 border-green-600 p-4 rounded">
+                            <h4 class="text-lg font-bold text-green-900">📊 ANALISTA (analista)</h4>
+                            <p class="text-green-800 mt-2">Executa atividades atribuídas. Pode ver oportunidades pertencentes a seu gerente mas sem permissão de editar.</p>
+                        </div>
+
+                        <div class="bg-gray-50 border-l-4 border-gray-600 p-4 rounded">
+                            <h4 class="text-lg font-bold text-gray-900">👁️ VISITANTE (visitante)</h4>
+                            <p class="text-gray-800 mt-2">Apenas leitura. Pode consultar informações mas não pode criar ou editar nada.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Matriz de Permissões Editável</h3>
+                    <p class="text-gray-700 mb-4">As permissões podem ser customizadas para cada role. Acesse a matriz de permissões para ajustar:</p>
+                    <a href="{% url 'prospecta:permissions_matrix' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition">
+                        <i class="fas fa-lock mr-2"></i>Editar Matriz de Permissões
+                    </a>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-purple-900 mb-4">
+                        <i class="fas fa-info-circle text-purple-600 mr-2"></i>Sobre as Permissões
+                    </h3>
+                    <ul class="space-y-2 text-purple-800">
+                        <li><i class="fas fa-check text-green-600 mr-2"></i> As permissões são verificadas em cada ação</li>
+                        <li><i class="fas fa-check text-green-600 mr-2"></i> Usuários sem permissão recebem erro 403</li>
+                        <li><i class="fas fa-check text-green-600 mr-2"></i> Mudanças de permissão são auditadas</li>
+                        <li><i class="fas fa-check text-green-600 mr-2"></i> Permissões são verificadas em tempo real</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab: Gerenciar Usuários -->
+            <div id="tab-usuarios" class="tab-content p-6 sm:p-8 hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Gerenciar Usuários</h2>
+                
+                <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-4">
+                            <i class="fas fa-user-plus text-blue-600 mr-2"></i>Criar Novo Usuário
+                        </h3>
+                        <ol class="space-y-2 text-blue-800 text-sm">
+                            <li>1. Acesse <strong>Gerenciar Usuários</strong></li>
+                            <li>2. Clique em <strong>+ Criar Novo Usuário</strong></li>
+                            <li>3. Preencha: nome, email, senha, role</li>
+                            <li>4. Clique em <strong>Criar</strong></li>
+                            <li>5. Usuário recebe email com login</li>
+                        </ol>
+                        <a href="{% url 'prospecta:admin_create_user' %}" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Criar Usuário
+                        </a>
+                    </div>
+
+                    <div class="bg-green-50 border border-green-200 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-900 mb-4">
+                            <i class="fas fa-edit text-green-600 mr-2"></i>Editar Usuário
+                        </h3>
+                        <ol class="space-y-2 text-green-800 text-sm">
+                            <li>1. Acesse <strong>Gerenciar Usuários</strong></li>
+                            <li>2. Clique no usuário desejado</li>
+                            <li>3. Modifique os dados (nome, email, role)</li>
+                            <li>4. Clique em <strong>Salvar</strong></li>
+                            <li>5. Alterações são auditadas</li>
+                        </ol>
+                        <a href="{% url 'prospecta:admin_users_list' %}" class="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            Ver Usuários
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 p-6 rounded-lg mb-8">
+                    <h3 class="text-lg font-semibold text-red-900 mb-4">
+                        <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>Desativar/Ativar Usuário
+                    </h3>
+                    <p class="text-red-800 mb-4">Em vez de deletar um usuário, você pode desativá-lo. Usuários desativados:</p>
+                    <ul class="space-y-2 text-red-800 text-sm">
+                        <li><i class="fas fa-times text-red-600 mr-2"></i> Não podem mais fazer login</li>
+                        <li><i class="fas fa-times text-red-600 mr-2"></i> Aparecem na lista mas marcados como "Inativo"</li>
+                        <li><i class="fas fa-check text-green-600 mr-2"></i> Histórico e dados são preservados para auditoria</li>
+                        <li><i class="fas fa-check text-green-600 mr-2"></i> Podem ser reativados a qualquer momento</li>
+                    </ul>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-200 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-purple-900 mb-4">
+                        <i class="fas fa-shield-alt text-purple-600 mr-2"></i>Boas Práticas
+                    </h3>
+                    <ul class="space-y-2 text-purple-800">
+                        <li><i class="fas fa-arrow-right text-purple-600 mr-2"></i> Sempre defina um role adequado ao criar usuário</li>
+                        <li><i class="fas fa-arrow-right text-purple-600 mr-2"></i> Use emails corporativos válidos</li>
+                        <li><i class="fas fa-arrow-right text-purple-600 mr-2"></i> Revise permissões periodicamente</li>
+                        <li><i class="fas fa-arrow-right text-purple-600 mr-2"></i> Desative em vez de deletar usuários</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab: Dicas e Boas Práticas -->
+            <div id="tab-dicas" class="tab-content p-6 sm:p-8 hidden">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Dicas e Boas Práticas</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-3">
+                            <i class="fas fa-lightbulb text-blue-600 mr-2"></i>1. Organize Bem as Etapas
+                        </h3>
+                        <p class="text-blue-800">Crie etapas que reflitam realmente o seu processo de vendas. Cada etapa deve ter duração realista em dias.</p>
+                    </div>
+
+                    <div class="bg-green-50 border-l-4 border-green-600 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-900 mb-3">
+                            <i class="fas fa-users text-green-600 mr-2"></i>2. Use Aprovações Estrategicamente
+                        </h3>
+                        <p class="text-green-800">Marque atividades importantes (propostas, contratos) para requerir aprovação. Isso garante qualidade e controle.</p>
+                    </div>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-600 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-yellow-900 mb-3">
+                            <i class="fas fa-chart-pie text-yellow-600 mr-2"></i>3. Monitore Relatórios
+                        </h3>
+                        <p class="text-yellow-800">Revise os relatórios regularmente para identificar gargalos, oportunidades lentas e equipes de alto desempenho.</p>
+                    </div>
+
+                    <div class="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-red-900 mb-3">
+                            <i class="fas fa-shield-alt text-red-600 mr-2"></i>4. Mantenha Segurança
+                        </h3>
+                        <p class="text-red-800">Revise permissões periodicamente, desative usuários que saem da empresa e use senhas fortes.</p>
+                    </div>
+
+                    <div class="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-purple-900 mb-3">
+                            <i class="fas fa-database text-purple-600 mr-2"></i>5. Mantenha Dados Limpos
+                        </h3>
+                        <p class="text-purple-800">Periodicamente, revise e archive oportunidades antigas. Isso melhora performance e clareza dos dados.</p>
+                    </div>
+
+                    <div class="bg-indigo-50 border-l-4 border-indigo-600 p-6 rounded-lg">
+                        <h3 class="text-lg font-semibold text-indigo-900 mb-3">
+                            <i class="fas fa-graduation-cap text-indigo-600 mr-2"></i>6. Treine sua Equipe
+                        </h3>
+                        <p class="text-indigo-800">Compartilhe este guia com sua equipe. Quanto melhor eles entendem o sistema, melhor será o uso.</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-gray-50 border border-gray-200 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Precisar de ajuda?</h3>
+                    <p class="text-gray-700 mb-4">Consulte o documento completo de fluxo e regras de negócio:</p>
+                    <a href="https://github.com/nextmarte/Outlook" target="_blank" class="inline-block bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 font-semibold">
+                        <i class="fab fa-github mr-2"></i>Ver Documentação Completa
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-gray-600 text-sm">
+            <p>PROSPECTA v{{ system_version }} | Último acesso como: <strong>{{ request.user.get_full_name }}</strong></p>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tabs
+        const tabs = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => tab.classList.add('hidden'));
+
+        // Remove active class from all buttons
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+        });
+
+        // Show selected tab
+        const selectedTab = document.getElementById(`tab-${tabName}`);
+        if (selectedTab) {
+            selectedTab.classList.remove('hidden');
+        }
+
+        // Add active class to clicked button
+        event.target.closest('.tab-btn').classList.remove('bg-gray-200', 'text-gray-700');
+        event.target.closest('.tab-btn').classList.add('bg-blue-600', 'text-white');
+    }
+</script>
+
+{% endblock %}

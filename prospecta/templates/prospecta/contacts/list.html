@@ -1,0 +1,78 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Contatos - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Contatos</h1>
+        <a href="{% url 'prospecta:clients_list' %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            <i class="fas fa-arrow-left mr-2"></i>Voltar para Clientes
+        </a>
+    </div>
+
+    {% if contacts %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for contact in contacts %}
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">{{ contact.name }}</h3>
+                    {% if contact.position %}
+                    <p class="text-sm text-gray-600">{{ contact.position }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2">
+                    <a href="{% url 'prospecta:contact_update' contact.pk %}" class="px-2 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'prospecta:contact_delete' contact.pk %}" class="px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-sm">
+                {% if contact.email %}
+                <p class="text-gray-700">
+                    <i class="fas fa-envelope text-blue-600 mr-2"></i>
+                    <a href="mailto:{{ contact.email }}" class="text-blue-600 hover:text-blue-700">{{ contact.email }}</a>
+                </p>
+                {% endif %}
+
+                {% if contact.phone %}
+                <p class="text-gray-700">
+                    <i class="fas fa-phone text-green-600 mr-2"></i>
+                    <a href="tel:{{ contact.phone }}" class="text-blue-600 hover:text-blue-700">{{ contact.phone }}</a>
+                </p>
+                {% endif %}
+
+                <p class="text-gray-700">
+                    <i class="fas fa-building text-purple-600 mr-2"></i>
+                    <a href="{% url 'prospecta:client_detail' contact.client.pk %}" class="text-blue-600 hover:text-blue-700">
+                        {{ contact.client.company_name }}
+                    </a>
+                </p>
+            </div>
+
+            {% if contact.notes %}
+            <div class="mt-4 p-3 bg-yellow-50 rounded text-sm text-gray-700">
+                <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
+                {{ contact.notes }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
+        <p class="text-gray-600 mb-4">Nenhum contato registrado</p>
+        <a href="{% url 'prospecta:clients_list' %}" class="text-blue-600 hover:underline font-medium">
+            Ir para clientes e criar contatos
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

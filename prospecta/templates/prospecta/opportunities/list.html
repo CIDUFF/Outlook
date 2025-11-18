@@ -10,7 +10,7 @@
             <h1 class="text-4xl font-bold text-gray-900">Oportunidades</h1>
             <p class="text-gray-600 mt-2">Gerencie todas as suas oportunidades de vendas</p>
         </div>
-        {% if is_seller %}
+        {% if can_write %}
         <a href="{% url 'prospecta:opportunity_create' %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium">
             <i class="fas fa-plus mr-2"></i>Nova Oportunidade
         </a>
@@ -95,7 +95,7 @@
                             <a href="{% url 'prospecta:opportunity_detail' pk=opp.pk %}" class="text-blue-600 hover:text-blue-700 font-medium">
                                 <i class="fas fa-eye mr-1"></i>Ver
                             </a>
-                            {% if is_manager %}
+                            {% if can_write %}
                             <a href="{% url 'prospecta:opportunity_update' pk=opp.pk %}" class="text-green-600 hover:text-green-700 font-medium">
                                 <i class="fas fa-edit mr-1"></i>Editar
                             </a>

@@ -1,0 +1,19 @@
+{% autoescape off %}
+Olá,
+
+A oportunidade "{{ opportunity.title }}" foi atualizada por {{ changed_by.get_full_name }}.
+
+Tipo de alteração: {{ change_type }}
+Detalhes: {{ change_details }}
+
+Cliente: {{ opportunity.client.name }}
+Status atual: {{ opportunity.get_status_display }}
+Responsável: {{ opportunity.responsible_user.get_full_name }}
+
+Acesse a oportunidade para mais detalhes:
+{{ opportunity_url }}
+
+---
+Este é um email automático do sistema PROSPECTA.
+Não responda este email.
+{% endautoescape %}

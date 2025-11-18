@@ -1,0 +1,143 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Documentos - {{ opportunity.title }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" class="text-blue-600 hover:text-blue-700">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <h1 class="text-4xl font-bold text-gray-900">Documentos</h1>
+                    </div>
+                    <p class="text-gray-600 mt-2">{{ opportunity.title }}</p>
+                </div>
+                {% if can_write %}
+                <button onclick="document.getElementById('uploadForm').classList.toggle('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-upload mr-2"></i>Enviar Documento
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Upload Form -->
+        {% if can_write %}
+        <div id="uploadForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-blue-600">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Enviar Novo Documento</h2>
+            <form method="post" action="{% url 'prospecta:upload_opportunity_document' pk=opportunity.pk %}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% csrf_token %}
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+                    <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Proposta Comercial">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                    <select name="document_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="outro">Outro</option>
+                        <option value="proposta">Proposta Comercial</option>
+                        <option value="contrato">Contrato</option>
+                        <option value="apresentacao">Apresentação</option>
+                        <option value="orcamento">Orçamento</option>
+                        <option value="especificacao">Especificação Técnica</option>
+                        <option value="ata">Ata de Reunião</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="flex items-center gap-2 mt-8">
+                        <input type="checkbox" name="is_public" class="rounded border-gray-300">
+                        <span class="text-sm font-medium text-gray-700">Público</span>
+                    </label>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                    <textarea name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Descrição opcional..."></textarea>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Arquivo *</label>
+                    <input type="file" name="file" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <div class="md:col-span-2 flex gap-2">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                        <i class="fas fa-check mr-2"></i>Enviar Documento
+                    </button>
+                    <button type="button" onclick="document.getElementById('uploadForm').classList.add('hidden')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium">
+                        <i class="fas fa-times mr-2"></i>Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Documents List -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-900">
+                    <i class="fas fa-file text-blue-600 mr-3"></i>
+                    Documentos ({{ documents.count }})
+                </h2>
+            </div>
+
+            {% if documents %}
+            <div class="divide-y divide-gray-200">
+                {% for doc in documents %}
+                <div class="p-6 hover:bg-gray-50 transition">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-blue-100 p-3 rounded-lg">
+                                    <i class="fas fa-file-pdf text-blue-600 text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">{{ doc.title }}</h3>
+                                    <div class="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                        <span><i class="fas fa-tag mr-1"></i>{{ doc.get_document_type_display }}</span>
+                                        <span><i class="fas fa-user mr-1"></i>{{ doc.uploaded_by.get_full_name }}</span>
+                                        <span><i class="fas fa-calendar mr-1"></i>{{ doc.created_at|date:"d/m/Y H:i" }}</span>
+                                        {% if doc.is_public %}
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">Público</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if doc.description %}
+                                    <p class="text-gray-600 mt-2">{{ doc.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 ml-4">
+                            <a href="{{ doc.file.url }}" target="_blank" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium" title="Baixar">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% if can_write and user == doc.uploaded_by or is_admin %}
+                            <a href="{% url 'prospecta:delete_opportunity_document' pk=doc.pk %}" onclick="return confirm('Tem certeza?')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg text-sm font-medium" title="Deletar">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="p-12 text-center">
+                <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Nenhum documento enviado</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

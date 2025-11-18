@@ -1,0 +1,143 @@
+{% extends 'prospecta/base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ page_title }} - PROSPECTA{% endblock %}
+
+{% block content %}
+<main class="flex-1 overflow-y-auto">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    <i class="fas fa-shield-alt text-blue-600 mr-2"></i>{{ page_title }}
+                </h1>
+                <p class="text-gray-600 text-sm mt-1">Gerencie as permissões de cada papel no sistema</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6">
+        <!-- Form com Tabela -->
+        <form method="POST" class="bg-white rounded-lg shadow-md overflow-hidden">
+            {% csrf_token %}
+            
+            <!-- Tabela Responsiva -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                Permissão
+                            </th>
+                            {% for role in roles %}
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    {% if role == 'admin' %}
+                                        <span class="inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-bold rounded-full">Admin</span>
+                                    {% elif role == 'gerente' %}
+                                        <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">Gerente</span>
+                                    {% elif role == 'analista' %}
+                                        <span class="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">Analista</span>
+                                    {% else %}
+                                        <span class="inline-block px-3 py-1 bg-gray-100 text-gray-800 text-xs font-bold rounded-full">Visitante</span>
+                                    {% endif %}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for permission in all_permissions %}
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                    <i class="fas fa-key text-blue-600 mr-2"></i>{{ permission }}
+                                </td>
+                                {% for role in roles %}
+                                    <td class="px-6 py-4 text-center">
+                                        {% with role_info=permissions_map|dict_lookup:role %}
+                                            {% with perm_value=role_info.permissions|dict_lookup:permission %}
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer transition"
+                                                        name="{{ role }}_{{ permission|slugify }}"
+                                                        value="on"
+                                                        {% if perm_value %}checked{% endif %}
+                                                        id="perm_{{ role }}_{{ permission|slugify }}">
+                                                </label>
+                                            {% endwith %}
+                                        {% endwith %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer com Botão -->
+            <div class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center">
+                    <i class="fas fa-save mr-2"></i>Salvar Permissões
+                </button>
+            </div>
+        </form>
+
+        <!-- Cards com Resumo por Role -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            {% for role in roles %}
+                {% with role_info=permissions_map|dict_lookup:role %}
+                    <div class="bg-white rounded-lg shadow-md p-6 border-l-4 
+                        {% if role == 'admin' %}border-red-600{% elif role == 'gerente' %}border-blue-600{% elif role == 'analista' %}border-green-600{% else %}border-gray-600{% endif %}">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                {% if role == 'admin' %}
+                                    Administrador
+                                {% elif role == 'gerente' %}
+                                    Gerente
+                                {% elif role == 'analista' %}
+                                    Analista
+                                {% else %}
+                                    Visitante
+                                {% endif %}
+                            </h3>
+                            {% if role == 'admin' %}
+                                <i class="fas fa-crown text-red-600 text-2xl opacity-20"></i>
+                            {% elif role == 'gerente' %}
+                                <i class="fas fa-briefcase text-blue-600 text-2xl opacity-20"></i>
+                            {% elif role == 'analista' %}
+                                <i class="fas fa-chart-line text-green-600 text-2xl opacity-20"></i>
+                            {% else %}
+                                <i class="fas fa-eye text-gray-600 text-2xl opacity-20"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex items-baseline gap-2">
+                            <div class="text-4xl font-bold 
+                                {% if role == 'admin' %}text-red-600{% elif role == 'gerente' %}text-blue-600{% elif role == 'analista' %}text-green-600{% else %}text-gray-600{% endif %}">
+                                {{ role_info.permissions|count_true_values }}
+                            </div>
+                            <span class="text-gray-600 text-sm">
+                                de {{ all_permissions|length }} permissões
+                            </span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
+                            {% with total_perms=all_permissions|length %}
+                                {% with allowed_perms=role_info.permissions|count_true_values %}
+                                    <div class="bg-gradient-to-r 
+                                        {% if role == 'admin' %}from-red-500 to-red-600{% elif role == 'gerente' %}from-blue-500 to-blue-600{% elif role == 'analista' %}from-green-500 to-green-600{% else %}from-gray-500 to-gray-600{% endif %}
+                                        h-full transition-all duration-300" 
+                                        style="width: {{ allowed_perms|multiply:100|divide:total_perms|floatformat:1 }}%"></div>
+                                {% endwith %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    </div>
+</main>
+
+{% endblock %}

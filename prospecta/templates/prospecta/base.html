@@ -4,164 +4,420 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PROSPECTA - Gestão de Oportunidades{% endblock %}</title>
+    {% csrf_token %}
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org"></script>
+    <script>
+        // Configure HTMX to include CSRF token in all requests
+        document.body.addEventListener('htmx:configRequest', function(event) {
+            event.detail.headers['X-CSRFToken'] = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        });
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {% block extra_css %}{% endblock %}
+    <style>
+        /* Sidebar animations */
+        #sidebar-wrapper {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #sidebar-wrapper.collapsed {
+            transform: translateX(-100%);
+        }
+
+        #sidebar-wrapper:not(.collapsed) {
+            transform: translateX(0);
+        }
+
+        /* Main content margin adjustment */
+        #main-content {
+            transition: margin-left 0.3s ease-in-out;
+        }
+
+        @media (min-width: 768px) {
+            body.sidebar-expanded #main-content {
+                margin-left: 0;
+            }
+
+            body.sidebar-collapsed #main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Mobile overlay */
+        #overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #overlay.inactive {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a href="{% url 'prospecta:home' %}" class="text-2xl font-bold text-blue-600">
-                        <i class="fas fa-chart-line mr-2"></i>PROSPECTA
-                    </a>
+    <!-- Mobile Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden inactive"></div>
+
+    <!-- Main Layout with Sidebar -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper" class="fixed md:relative left-0 top-0 h-screen w-64 z-40 md:z-auto collapsed md:!transform-none">
+            <div class="h-full bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-xl overflow-y-auto md:relative">
+                <!-- Sidebar Header -->
+                <div class="p-4 border-b border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <a href="{% url 'prospecta:home' %}" class="text-xl font-bold text-white hover:text-blue-400 transition">
+                            <i class="fas fa-chart-line mr-2"></i>PROSPECTA
+                        </a>
+                        <button id="close-sidebar-btn" class="md:hidden text-gray-400 hover:text-white">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Menu Central -->
-                {% if user.is_authenticated %}
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="{% url 'prospecta:dashboard' %}" class="text-gray-700 hover:text-blue-600 transition">
-                        <i class="fas fa-home mr-1"></i>Dashboard
-                    </a>
-                    
-                    {% if is_seller %}
-                    <a href="{% url 'prospecta:opportunities_list' %}" class="text-gray-700 hover:text-blue-600 transition">
-                        <i class="fas fa-handshake mr-1"></i>Oportunidades
-                    </a>
-                    {% endif %}
-                    
-                    {% if is_manager %}
-                    <a href="{% url 'prospecta:clients_list' %}" class="text-gray-700 hover:text-blue-600 transition">
-                        <i class="fas fa-users mr-1"></i>Clientes
-                    </a>
-                    {% endif %}
-                    
-                    <a href="{% url 'prospecta:activities_list' %}" class="text-gray-700 hover:text-blue-600 transition relative">
-                        <i class="fas fa-tasks mr-1"></i>Atividades
-                        {% if pending_activities_count > 0 %}
-                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                            {{ pending_activities_count }}
-                        </span>
-                        {% endif %}
-                    </a>
-                    
-                    {% if is_admin %}
-                    <a href="{% url 'prospecta:reports' %}" class="text-gray-700 hover:text-blue-600 transition">
-                        <i class="fas fa-chart-bar mr-1"></i>Relatórios
-                    </a>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- User Menu -->
-                <div class="flex items-center space-x-4">
+                <!-- Sidebar Menu -->
+                <nav class="flex-1 p-4 space-y-2">
                     {% if user.is_authenticated %}
-                    <div class="hidden md:flex items-center space-x-4">
-                        {% if user.profile.avatar %}
-                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name }}" class="w-8 h-8 rounded-full">
-                        {% else %}
-                        <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm">
-                            {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                        <!-- Dashboard -->
+                        <a href="{% url 'prospecta:dashboard' %}" 
+                           class="flex items-center px-4 py-3 rounded-lg {% if request.resolver_match.url_name == 'dashboard' %}bg-blue-600 text-white{% else %}text-gray-300 hover:bg-gray-700{% endif %} transition">
+                            <i class="fas fa-home w-5 text-center"></i>
+                            <span class="ml-3">Dashboard</span>
+                        </a>
+
+                        <!-- Vendas Section -->
+                        {% if is_manager or is_analista %}
+                        <div class="space-y-1">
+                            <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Vendas</p>
+                            
+                            <!-- Oportunidades -->
+                            <a href="{% url 'prospecta:opportunities_list' %}" 
+                               class="flex items-center px-4 py-2 rounded-lg {% if 'opportunity' in request.resolver_match.url_name %}bg-blue-600 text-white{% else %}text-gray-300 hover:bg-gray-700{% endif %} transition">
+                                <i class="fas fa-handshake w-5 text-center"></i>
+                                <span class="ml-3">Oportunidades</span>
+                            </a>
+
+                            <!-- Criar Oportunidade -->
+                            <a href="{% url 'prospecta:opportunity_create' %}" 
+                               class="flex items-center px-4 py-2 ml-2 rounded-lg text-gray-300 hover:bg-gray-700 transition text-sm">
+                                <i class="fas fa-plus w-4 text-center"></i>
+                                <span class="ml-3">Criar</span>
+                            </a>
+
+                            <!-- Clientes -->
+                            <a href="{% url 'prospecta:clients_list' %}" 
+                               class="flex items-center px-4 py-2 rounded-lg {% if 'client' in request.resolver_match.url_name %}bg-blue-600 text-white{% else %}text-gray-300 hover:bg-gray-700{% endif %} transition">
+                                <i class="fas fa-building w-5 text-center"></i>
+                                <span class="ml-3">Clientes</span>
+                            </a>
+
+                            <!-- Contatos -->
+                            <a href="{% url 'prospecta:contacts_list' %}" 
+                               class="flex items-center px-4 py-2 ml-2 rounded-lg text-gray-300 hover:bg-gray-700 transition text-sm">
+                                <i class="fas fa-users w-4 text-center"></i>
+                                <span class="ml-3">Contatos</span>
+                            </a>
                         </div>
                         {% endif %}
-                        
-                        <div class="relative group">
-                            <button class="flex items-center text-gray-700 hover:text-blue-600 transition">
-                                <span>{{ user.get_full_name }}</span>
-                                <i class="fas fa-chevron-down ml-1 text-xs"></i>
-                            </button>
+
+                        <!-- Atividades -->
+                        {% if not is_visitor %}
+                        <a href="{% url 'prospecta:activities_list' %}" 
+                           class="flex items-center px-4 py-3 rounded-lg {% if 'activity' in request.resolver_match.url_name %}bg-blue-600 text-white{% else %}text-gray-300 hover:bg-gray-700{% endif %} transition relative">
+                            <i class="fas fa-tasks w-5 text-center"></i>
+                            <span class="ml-3">Atividades</span>
+                            {% if pending_activities_count > 0 %}
+                            <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                                {{ pending_activities_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        {% endif %}
+
+                        <!-- Relatórios -->
+                        {% if is_admin %}
+                        <a href="{% url 'prospecta:reports' %}" 
+                           class="flex items-center px-4 py-3 rounded-lg {% if 'report' in request.resolver_match.url_name %}bg-blue-600 text-white{% else %}text-gray-300 hover:bg-gray-700{% endif %} transition">
+                            <i class="fas fa-chart-bar w-5 text-center"></i>
+                            <span class="ml-3">Relatórios</span>
+                        </a>
+                        {% endif %}
+
+                        <!-- Admin Section -->
+                        {% if is_admin %}
+                        <div class="space-y-1 pt-4 border-t border-gray-700">
+                            <p class="px-4 py-2 text-xs font-semibold text-red-400 uppercase tracking-wider">Administração</p>
                             
-                            <!-- Dropdown Menu -->
-                            <div class="absolute right-0 mt-0 w-48 bg-white rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 invisible group-hover:visible">
-                                <a href="{% url 'prospecta:profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-t-lg">
-                                    <i class="fas fa-user mr-2"></i>Meu Perfil
-                                </a>
-                                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-b-lg">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>Sair
-                                </a>
+                            <a href="{% url 'prospecta:admin_dashboard' %}" 
+                               class="flex items-center px-4 py-2 rounded-lg {% if 'admin' in request.resolver_match.url_name %}bg-red-600 text-white{% else %}text-gray-300 hover:bg-gray-700{% endif %} transition">
+                                <i class="fas fa-shield-alt w-5 text-center"></i>
+                                <span class="ml-3">Painel Admin</span>
+                            </a>
+
+                            <a href="{% url 'prospecta:admin_users_list' %}" 
+                               class="flex items-center px-4 py-2 ml-2 rounded-lg text-gray-300 hover:bg-gray-700 transition text-sm">
+                                <i class="fas fa-users w-4 text-center"></i>
+                                <span class="ml-3">Usuários</span>
+                            </a>
+
+                            <a href="{% url 'prospecta:permissions_matrix' %}" 
+                               class="flex items-center px-4 py-2 ml-2 rounded-lg text-gray-300 hover:bg-gray-700 transition text-sm">
+                                <i class="fas fa-lock w-4 text-center"></i>
+                                <span class="ml-3">Permissões</span>
+                            </a>
+
+                            <a href="{% url 'prospecta:admin_help' %}" 
+                               class="flex items-center px-4 py-2 ml-2 rounded-lg text-gray-300 hover:bg-gray-700 transition text-sm">
+                                <i class="fas fa-question-circle w-4 text-center"></i>
+                                <span class="ml-3">Ajuda</span>
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </nav>
+
+                <!-- Sidebar Footer -->
+                {% if user.is_authenticated %}
+                <div class="p-4 border-t border-gray-700 space-y-2">
+                    <a href="{% url 'prospecta:profile' %}" 
+                       class="flex items-center px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-700 transition text-sm">
+                        <i class="fas fa-user w-5 text-center"></i>
+                        <span class="ml-3">Meu Perfil</span>
+                    </a>
+                    <a href="{% url 'account_logout' %}" 
+                       class="flex items-center px-4 py-2 rounded-lg text-gray-300 hover:bg-red-600 transition text-sm">
+                        <i class="fas fa-sign-out-alt w-5 text-center"></i>
+                        <span class="ml-3">Sair</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content" class="flex-1 flex flex-col min-h-screen w-full overflow-hidden">
+            <!-- Top Header -->
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
+                <div class="px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16">
+                        <!-- Hamburger Menu (mobile) -->
+                        <button id="hamburger-btn" class="md:hidden text-gray-700 hover:text-blue-600 transition">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+
+                        <!-- Search Bar -->
+                        <div class="flex-1 mx-4">
+                            <div class="relative hidden md:block max-w-md">
+                                <input type="text" 
+                                       id="search-input"
+                                       placeholder="Buscar..." 
+                                       hx-post="{% url 'prospecta:search_global' %}"
+                                       hx-target="#search-results"
+                                       hx-trigger="keyup delay:500ms changed"
+                                       name="q"
+                                       class="w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <div id="search-results" class="absolute top-12 left-0 bg-white border border-gray-300 rounded-lg shadow-lg w-full max-h-96 overflow-y-auto z-50" style="display: none;"></div>
                             </div>
                         </div>
+
+                        <!-- User Menu -->
+                        {% if user.is_authenticated %}
+                        <div class="flex items-center space-x-4">
+                            <span class="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {% if is_admin %}bg-red-100 text-red-800{% elif is_manager %}bg-blue-100 text-blue-800{% elif is_analista %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                <i class="fas fa-{% if is_admin %}shield-alt{% elif is_manager %}briefcase{% elif is_analista %}chart-line{% else %}eye{% endif %} mr-1"></i>
+                                {{ user.profile.get_role_display }}
+                            </span>
+
+                            <div x-data="{ userMenuOpen: false }" class="relative">
+                                <button @click="userMenuOpen = !userMenuOpen" class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition">
+                                    {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.get_full_name }}" class="w-8 h-8 rounded-full object-cover">
+                                    {% else %}
+                                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                                        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+                                    </div>
+                                    {% endif %}
+                                </button>
+                                
+                                <div x-show="userMenuOpen" 
+                                     @click.outside="userMenuOpen = false"
+                                     class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50"
+                                     style="display: none;">
+                                    <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                        <p class="text-sm font-semibold text-gray-900">{{ user.get_full_name }}</p>
+                                        <p class="text-xs text-gray-600">{{ user.email }}</p>
+                                    </div>
+                                    <a href="{% url 'prospecta:profile' %}" 
+                                       @click="userMenuOpen = false"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition text-sm">
+                                        <i class="fas fa-user mr-2"></i>Meu Perfil
+                                    </a>
+                                    <a href="{% url 'account_logout' %}" 
+                                       class="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 transition text-sm border-t border-gray-200">
+                                        <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <a href="{% url 'account_login' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm">
+                            Entrar
+                        </a>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <a href="{% url 'account_login' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                        Entrar
-                    </a>
-                    {% endif %}
-
-                    <!-- Mobile Menu Button -->
-                    <button id="mobile-menu-btn" class="md:hidden text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-bars text-xl"></i>
-                    </button>
                 </div>
-            </div>
+            </header>
 
-            <!-- Mobile Menu -->
-            <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
-                {% if user.is_authenticated %}
-                <a href="{% url 'prospecta:dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
-                    <i class="fas fa-home mr-2"></i>Dashboard
-                </a>
-                {% if is_seller %}
-                <a href="{% url 'prospecta:opportunities_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
-                    <i class="fas fa-handshake mr-2"></i>Oportunidades
-                </a>
-                {% endif %}
-                {% if is_manager %}
-                <a href="{% url 'prospecta:clients_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
-                    <i class="fas fa-users mr-2"></i>Clientes
-                </a>
-                {% endif %}
-                <a href="{% url 'prospecta:activities_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
-                    <i class="fas fa-tasks mr-2"></i>Atividades
-                </a>
-                <a href="{% url 'prospecta:profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
-                    <i class="fas fa-user mr-2"></i>Meu Perfil
-                </a>
-                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Sair
-                </a>
-                {% endif %}
+            <!-- Messages -->
+            {% if messages %}
+            <div class="fixed top-20 right-4 z-40 space-y-2">
+                {% for message in messages %}
+                <div class="rounded-lg p-4 shadow-lg {% if message.tags %}bg-{{ message.tags }}-100 text-{{ message.tags }}-800{% else %}bg-blue-100 text-blue-800{% endif %} max-w-md">
+                    <div class="flex items-center">
+                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} mr-2"></i>
+                        {{ message }}
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-    </nav>
+            {% endif %}
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-        {% for message in messages %}
-        <div class="rounded-lg p-4 mb-4 {% if message.tags %}bg-{{ message.tags }}-100 text-{{ message.tags }}-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-            <div class="flex items-center">
-                <i class="fas fa-info-circle mr-2"></i>
-                {{ message }}
-            </div>
+            <!-- Breadcrumb -->
+            {% if breadcrumbs %}
+            {% include 'prospecta/components/breadcrumb.html' %}
+            {% endif %}
+
+            <!-- Main Content -->
+            <main class="flex-1 bg-gray-50 overflow-y-auto">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-gray-900 text-gray-400 py-4 text-center text-xs border-t border-gray-800">
+                <p>&copy; 2025 PROSPECTA - Sistema de Gestão de Oportunidades</p>
+            </footer>
         </div>
-        {% endfor %}
     </div>
-    {% endif %}
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-gray-400 mt-12 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <p>&copy; 2025 PROSPECTA - Sistema de Gestão de Oportunidades. Todos os direitos reservados.</p>
-            </div>
-        </div>
-    </footer>
 
     <script>
-        // Toggle mobile menu
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
-            document.getElementById('mobile-menu').classList.toggle('hidden');
+        // ===== SIDEBAR CONTROL WITH HOVER =====
+        const sidebar = document.getElementById('sidebar-wrapper');
+        const overlay = document.getElementById('overlay');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        
+        // Open sidebar on hamburger click
+        hamburgerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.remove('collapsed');
+            overlay.classList.remove('inactive');
+            overlay.classList.add('active');
         });
+        
+        // Close sidebar on close button click
+        closeSidebarBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.add('collapsed');
+            overlay.classList.add('inactive');
+            overlay.classList.remove('active');
+        });
+        
+        // Close sidebar on overlay click (mobile)
+        overlay.addEventListener('click', function(e) {
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                overlay.classList.add('inactive');
+                overlay.classList.remove('active');
+            }
+        });
+        
+        // Desktop: Show/hide sidebar on hover
+        if (window.innerWidth >= 768) {
+            sidebar.addEventListener('mouseenter', function() {
+                sidebar.classList.remove('collapsed');
+            });
+            
+            sidebar.addEventListener('mouseleave', function() {
+                sidebar.classList.add('collapsed');
+            });
+        }
+        
+        // Handle window resize - show sidebar on desktop, hide on mobile
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                sidebar.classList.remove('collapsed');
+                overlay.classList.add('inactive');
+                sidebar.addEventListener('mouseenter', function() {
+                    sidebar.classList.remove('collapsed');
+                });
+                sidebar.addEventListener('mouseleave', function() {
+                    sidebar.classList.add('collapsed');
+                });
+            } else {
+                sidebar.classList.add('collapsed');
+                overlay.classList.add('inactive');
+            }
+        });
+        
+        // Initialize sidebar state based on screen size
+        window.addEventListener('load', function() {
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('collapsed');
+                overlay.classList.add('inactive');
+            } else {
+                sidebar.classList.remove('collapsed');
+                overlay.classList.add('inactive');
+            }
+        });
+        
+        // ===== SEARCH RESULTS CONTROL =====
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        
+        // Show/hide search results based on HTMX events
+        htmx.on('htmx:afterSwap', function(event) {
+            if (event.detail.target && event.detail.target.id === 'search-results') {
+                if (searchResults.innerHTML.trim().length > 0 && searchInput.value.trim().length > 0) {
+                    searchResults.style.display = 'block';
+                } else {
+                    searchResults.style.display = 'none';
+                }
+            }
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', function(event) {
+            if (searchInput && searchResults && !searchInput.contains(event.target) && !searchResults.contains(event.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Show search results on focus if has content
+        if (searchInput) {
+            searchInput.addEventListener('focus', function() {
+                if (searchResults.innerHTML.trim().length > 0 && this.value.trim().length > 0) {
+                    searchResults.style.display = 'block';
+                }
+            });
+            
+            // Clear results on empty input
+            searchInput.addEventListener('input', function() {
+                if (this.value.trim().length === 0) {
+                    searchResults.style.display = 'none';
+                    searchResults.innerHTML = '';
+                }
+            });
+        }
     </script>
 
     {% block extra_js %}{% endblock %}

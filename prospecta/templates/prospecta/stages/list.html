@@ -1,0 +1,64 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Etapas - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Etapas de Oportunidades</h1>
+    </div>
+
+    {% if stages %}
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ordem</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Oportunidade</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Atividades</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Criada em</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for stage in stages %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-gray-800 font-semibold">#{{ stage.order }}</td>
+                    <td class="px-6 py-4 text-gray-800 font-medium">{{ stage.name }}</td>
+                    <td class="px-6 py-4">
+                        <a href="{% url 'prospecta:opportunity_detail' stage.opportunity.pk %}" class="text-blue-600 hover:text-blue-700 font-medium">
+                            {{ stage.opportunity.title }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 text-gray-700">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            {{ stage.activities.count }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">{{ stage.created_at|date:"d/m/Y" }}</td>
+                    <td class="px-6 py-4 flex gap-2">
+                        <a href="{% url 'prospecta:stage_update' stage.pk %}" class="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'prospecta:stage_delete' stage.pk %}" class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <i class="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
+        <p class="text-gray-600 mb-4">Nenhuma etapa registrada</p>
+        <a href="{% url 'prospecta:opportunities_list' %}" class="text-blue-600 hover:underline font-medium">
+            Ir para oportunidades e criar etapas
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "prospecta/base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">{{ page_title }}</h1>
+        <a href="{% url 'prospecta:dashboard' %}" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Total Users Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Total de Usuários</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_users }}</p>
+                </div>
+                <div class="bg-blue-100 rounded-full p-3">
+                    <i class="fas fa-users text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admins Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Administradores</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_admins }}</p>
+                </div>
+                <div class="bg-purple-100 rounded-full p-3">
+                    <i class="fas fa-shield-alt text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Managers Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Gerentes</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_managers }}</p>
+                </div>
+                <div class="bg-green-100 rounded-full p-3">
+                    <i class="fas fa-user-tie text-green-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sellers Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Visitantes</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_visitors }}</p>
+                </div>
+                <div class="bg-gray-100 rounded-full p-3">
+                    <i class="fas fa-eye text-gray-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysts Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Analistas</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_analysts }}</p>
+                </div>
+                <div class="bg-red-100 rounded-full p-3">
+                    <i class="fas fa-chart-bar text-red-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inactive Users Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Usuários Inativos</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ inactive_users }}</p>
+                </div>
+                <div class="bg-gray-100 rounded-full p-3">
+                    <i class="fas fa-user-slash text-gray-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-4 mb-8 flex-wrap">
+        <a href="{% url 'prospecta:admin_users_list' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">
+            <i class="fas fa-users"></i> Gerenciar Usuários
+        </a>
+        <a href="{% url 'prospecta:admin_create_user' %}" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition">
+            <i class="fas fa-user-plus"></i> Criar Novo Usuário
+        </a>
+        <a href="{% url 'prospecta:permissions_matrix' %}" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg transition">
+            <i class="fas fa-shield-alt"></i> Matriz de Permissões
+        </a>
+    </div>
+
+    <!-- Recent Activity Section (if available) -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-history"></i> Atividade Recente
+        </h2>
+        <p class="text-gray-600 text-center py-8">
+            Não há atividade recente para exibir no momento.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Modelos de Venda - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Modelos de Venda</h1>
+        <a href="{% url 'prospecta:sales_model_create' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <i class="fas fa-plus mr-2"></i>Novo Modelo
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md">
+        {% if sales_models %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Descrição</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in sales_models %}
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="px-6 py-4 text-gray-800 font-medium">{{ model.name }}</td>
+                                <td class="px-6 py-4 text-gray-700">{{ model.description|truncatewords:15 }}</td>
+                                <td class="px-6 py-4 flex gap-2">
+                                    <a href="{% url 'prospecta:sales_model_update' model.pk %}" class="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'prospecta:sales_model_delete' model.pk %}" class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-8 text-center">
+                <p class="text-gray-600 mb-4">Nenhum modelo de venda registrado</p>
+                <a href="{% url 'prospecta:sales_model_create' %}" class="text-blue-600 hover:underline">
+                    Criar primeiro modelo
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
