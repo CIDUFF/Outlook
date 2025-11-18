@@ -59,6 +59,7 @@ class OpportunityAdmin(admin.ModelAdmin):
     search_fields = ('title', 'client__name')
     list_filter = ('status', 'created_at', 'responsible_user')
     readonly_fields = ('id', 'created_at', 'updated_at')
+    filter_horizontal = ('partnerships',)
 
 
 @admin.register(Stage)

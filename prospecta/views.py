@@ -346,12 +346,22 @@ def opportunity_create(request):
         )
         opportunity.save()
 
+        # Adicionar parcerias (ManyToMany precisa ser salvo após o objeto)
+        partnerships_ids = request.POST.getlist('partnerships')
+        if partnerships_ids:
+            opportunity.partnerships.set(partnerships_ids)
+
         # Criar histórico
+        partnerships_names = ', '.join([c.name for c in opportunity.partnerships.all()])
+        history_details = f'Oportunidade criada por {request.user.get_full_name()}'
+        if partnerships_names:
+            history_details += f' com parcerias: {partnerships_names}'
+        
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
             change_type='criacao',
-            change_details=f'Oportunidade criada por {request.user.get_full_name()}'
+            change_details=history_details
         )
 
         messages.success(request, 'Oportunidade criada com sucesso!')
@@ -422,11 +432,21 @@ def opportunity_update(request, pk):
         opportunity.status = request.POST.get('status', opportunity.status)
         opportunity.save()
 
+        # Atualizar parcerias
+        partnerships_ids = request.POST.getlist('partnerships')
+        opportunity.partnerships.set(partnerships_ids)
+
+        # Criar histórico
+        partnerships_names = ', '.join([c.name for c in opportunity.partnerships.all()])
+        history_details = f'Oportunidade atualizada por {request.user.get_full_name()}'
+        if partnerships_names:
+            history_details += f' - Parcerias: {partnerships_names}'
+        
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
             change_type='atualizacao',
-            change_details=f'Oportunidade atualizada por {request.user.get_full_name()}'
+            change_details=history_details
         )
 
         messages.success(request, 'Oportunidade atualizada com sucesso!')

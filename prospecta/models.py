@@ -144,6 +144,8 @@ class Opportunity(models.Model):
         blank=True, null=True, verbose_name='Descrição')
     client = models.ForeignKey(Client, on_delete=models.CASCADE,
                                related_name='opportunities', verbose_name='Cliente')
+    partnerships = models.ManyToManyField(
+        Client, blank=True, related_name='partnerships_opportunities', verbose_name='Parcerias')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                    related_name='opportunities_created', verbose_name='Criado por')
     responsible_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
