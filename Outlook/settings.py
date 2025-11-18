@@ -195,6 +195,10 @@ ADMIN_SITE_TITLE = "PROSPECTA"
 ADMIN_INDEX_TITLE = "Bem-vindo ao PROSPECTA"
 
 # Logging Configuration
+# Ensure logs directory exists
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -212,7 +216,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/tmp/django_oauth.log',
+            'filename': str(LOGS_DIR / 'django_oauth.log'),
             'formatter': 'detailed',
         },
         'console': {
