@@ -262,7 +262,6 @@ def get_or_create_google_integration(user):
     except GoogleCalendarIntegration.DoesNotExist:
         logger.info(f"No Google Calendar integration for user {user.username}")
         return None
-        return []
 
 
 def sync_meeting_to_google_calendar(meeting) -> bool:
