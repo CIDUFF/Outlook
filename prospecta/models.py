@@ -499,12 +499,6 @@ class Meeting(models.Model):
     location = models.CharField(
         max_length=500, blank=True, null=True, verbose_name='Local/Link')
 
-    # Integração Google Calendar
-    google_event_id = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name='ID Evento Google')
-    synced_with_google = models.BooleanField(
-        default=False, verbose_name='Sincronizado com Google')
-
     # Notas e resultados
     notes = models.TextField(blank=True, null=True, verbose_name='Notas')
     action_items = models.TextField(
@@ -525,34 +519,4 @@ class Meeting(models.Model):
         return f"{self.title} - {self.start_datetime.strftime('%d/%m/%Y %H:%M')}"
 
 
-class GoogleCalendarIntegration(models.Model):
-    """Integração com Google Calendar por usuário"""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
-                          editable=False, verbose_name='ID')
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name='google_calendar', verbose_name='Usuário')
 
-    # Tokens OAuth
-    access_token = models.TextField(verbose_name='Access Token', default='')
-    refresh_token = models.TextField(
-        verbose_name='Refresh Token', blank=True, null=True)
-    token_expiry = models.DateTimeField(
-        verbose_name='Token Expira em', blank=True, null=True)
-
-    # Calendário padrão
-    calendar_id = models.CharField(
-        max_length=255, default='primary', verbose_name='ID do Calendário')
-
-    is_active = models.BooleanField(default=True, verbose_name='Ativo')
-    created_at = models.DateTimeField(
-        default=timezone.now, verbose_name='Criado em')
-    updated_at = models.DateTimeField(
-        default=timezone.now, verbose_name='Atualizado em')
-
-    class Meta:
-        db_table = 'tab_google_calendar_integration'
-        verbose_name = 'Integração Google Calendar'
-        verbose_name_plural = 'Integrações Google Calendar'
-
-    def __str__(self):
-        return f"Google Calendar - {self.user.get_full_name()}"

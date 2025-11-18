@@ -43,21 +43,6 @@
                 </ol>
             </div>
 
-            <!-- Associar com Google -->
-            <div class="bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-300 rounded-lg p-4">
-                <h3 class="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                    <i class="fab fa-google"></i> Google Calendar Automático
-                </h3>
-                <p class="text-blue-800 text-sm mb-2">
-                    Reuniões são sincronizadas com seu Google Calendar:
-                </p>
-                <ul class="text-blue-800 text-sm space-y-1 ml-6 list-disc">
-                    <li>Participantes recebem convites</li>
-                    <li>Aparecem em seu calendário pessoal</li>
-                    <li>Lembretes automáticos funcionam</li>
-                </ul>
-            </div>
-
             <!-- Associar com Atividade -->
             <div class="bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg p-4">
                 <h3 class="font-bold text-pink-900 mb-2 flex items-center gap-2">
@@ -192,9 +177,8 @@
                     {% endif %}
 
                     {% if meeting.synced_with_google %}
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                            <i class="fas fa-sync-alt mr-1"></i>Sincronizado com Google Calendar
+                                            <span class="px-2 py-1 text-xs font-medium rounded {{ status_badge }}">
+                            {{ meeting.get_status_display }}
                         </span>
                     </div>
                     {% endif %}

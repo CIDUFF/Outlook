@@ -2,7 +2,6 @@ from django.urls import path
 from . import views
 from . import admin_views
 from . import calendar_views
-from .oauth_status_view import oauth_status
 
 app_name = 'prospecta'
 
@@ -104,9 +103,6 @@ urlpatterns = [
     # Search
     path('buscar/', views.search_global, name='search_global'),
 
-    # OAuth Debug
-    path('oauth-status/', oauth_status, name='oauth_status'),
-
     # ========================================================================
     # DOCUMENTOS E ANEXOS
     # ========================================================================
@@ -137,12 +133,4 @@ urlpatterns = [
          calendar_views.associate_meeting_to_activity, name='associate_meeting_to_activity'),
     path('atividades/<uuid:activity_pk>/associar-reuniao-rapido/',
          calendar_views.activity_quick_associate, name='activity_quick_associate'),
-
-    # Google Calendar Integration
-    path('google-calendar/conectar/',
-         calendar_views.google_calendar_connect, name='google_calendar_connect'),
-    path('google-calendar/status/',
-         calendar_views.google_calendar_status, name='google_calendar_status'),
-    path('google-calendar/callback/',
-         calendar_views.google_calendar_callback, name='google_calendar_callback'),
 ]
