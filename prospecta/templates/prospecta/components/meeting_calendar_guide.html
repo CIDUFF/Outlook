@@ -1,12 +1,12 @@
-<!-- Meeting & Calendar Integration Guide Component -->
+<!-- Meeting Guide Component -->
 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
     <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <i class="fas fa-calendar-check text-blue-600"></i>
-        Como Usar Reuniões & Google Calendar
+        Como Usar Reuniões
     </h3>
 
     <!-- Flow Steps -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Step 1: Criar Reunião -->
         <div class="bg-white rounded-lg p-4 border-l-4 border-blue-600 hover:shadow-md transition">
             <div class="flex items-center justify-between mb-3">
@@ -22,24 +22,10 @@
             </ul>
         </div>
 
-        <!-- Step 2: Conectar Google Calendar -->
-        <div class="bg-white rounded-lg p-4 border-l-4 border-indigo-600 hover:shadow-md transition">
-            <div class="flex items-center justify-between mb-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 bg-indigo-100 text-indigo-700 font-bold rounded-full">2</span>
-                <i class="fas fa-chevron-right text-gray-300"></i>
-            </div>
-            <h4 class="font-bold text-gray-900 text-sm mb-2">Google Calendar</h4>
-            <p class="text-xs text-gray-600">Reuniões são <strong>sincronizadas automaticamente</strong> com seu Google Calendar</p>
-            <div class="text-xs text-indigo-700 mt-2 bg-indigo-50 p-2 rounded">
-                <i class="fab fa-google mr-1"></i>
-                Eventos, convites e lembretes funcionam automaticamente
-            </div>
-        </div>
-
-        <!-- Step 3: Associar à Atividade -->
+        <!-- Step 2: Associar à Atividade -->
         <div class="bg-white rounded-lg p-4 border-l-4 border-pink-600 hover:shadow-md transition">
             <div class="flex items-center justify-between mb-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 bg-pink-100 text-pink-700 font-bold rounded-full">3</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 bg-pink-100 text-pink-700 font-bold rounded-full">2</span>
                 <i class="fas fa-chevron-right text-gray-300"></i>
             </div>
             <h4 class="font-bold text-gray-900 text-sm mb-2">Associar Atividade</h4>
@@ -50,10 +36,10 @@
             </div>
         </div>
 
-        <!-- Step 4: Acompanhar Progresso -->
+        <!-- Step 3: Acompanhar Progresso -->
         <div class="bg-white rounded-lg p-4 border-l-4 border-green-600 hover:shadow-md transition">
             <div class="flex items-center justify-between mb-3">
-                <span class="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-700 font-bold rounded-full">4</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-700 font-bold rounded-full">3</span>
             </div>
             <h4 class="font-bold text-gray-900 text-sm mb-2">Acompanhar</h4>
             <p class="text-xs text-gray-600">Veja o histórico completo da oportunidade com todas as reuniões realizadas</p>
@@ -66,10 +52,6 @@
 
     <!-- Action Buttons -->
     <div class="mt-6 pt-6 border-t border-blue-200 flex flex-wrap gap-2">
-        <a href="{% url 'prospecta:google_calendar_connect' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
-            <i class="fab fa-google mr-2"></i>
-            Conectar Google Calendar
-        </a>
         <a href="{% url 'prospecta:create_meeting' pk=opportunity.pk %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
             <i class="fas fa-plus-circle mr-2"></i>
             Nova Reunião
@@ -83,7 +65,6 @@
     <!-- Info Box -->
     <div class="mt-4 p-4 bg-blue-100 border border-blue-300 rounded-lg text-sm text-blue-900">
         <i class="fas fa-info-circle mr-2 font-bold"></i>
-        <strong>Dica:</strong> Após criar a reunião, ela aparecerá no seu Google Calendar (se conectado) e nos participantes receberão convites automáticos. 
-        Você pode então associá-la às atividades para rastrear o que foi discutido em cada reunião.
+        <strong>Dica:</strong> Após criar a reunião, você pode associá-la às atividades para rastrear o que foi discutido em cada reunião.
     </div>
 </div>

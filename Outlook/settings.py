@@ -27,9 +27,16 @@ SECRET_KEY = config(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = [host.strip() for host in config(
+    'ALLOWED_HOSTS', default='127.0.0.1,localhost,cid-uff.net,prospecta.cid-uff.net').split(',')]
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [
+    'https://prospecta.cid-uff.net',
+    'https://cid-uff.net',
+    'http://localhost:8555',
+    'http://127.0.0.1:8555',
+]
 
 # Application definition
 
@@ -185,6 +192,9 @@ SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_ADAPTER = 'prospecta.adapters.CustomSocialAccountAdapter'
 
+# Protocol configuration for OAuth callbacks
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = config('ACCOUNT_DEFAULT_HTTP_PROTOCOL', default='https')
+
 LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'prospecta:dashboard'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'prospecta:home'
@@ -212,7 +222,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/tmp/django_oauth.log',
+            'filename': BASE_DIR / 'logs' / 'django_oauth.log',
             'formatter': 'detailed',
         },
         'console': {

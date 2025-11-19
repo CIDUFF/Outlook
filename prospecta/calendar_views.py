@@ -9,46 +9,9 @@ from datetime import datetime
 
 from .models import (
     Opportunity, Activity, Meeting, OpportunityDocument,
-    ActivityAttachment, User, GoogleCalendarIntegration
+    ActivityAttachment, User
 )
 from .views import get_user_context, role_required
-
-# ============================================================================
-# GOOGLE CALENDAR INTEGRATION
-# ============================================================================
-
-
-@login_required(login_url='account_login')
-def google_calendar_connect(request):
-    """Redireciona para Google OAuth ou mostra status"""
-    try:
-        # Verificar se já tem integração configurada
-        integration = GoogleCalendarIntegration.objects.get(user=request.user)
-        if integration.is_active and integration.access_token:
-            messages.info(request, '✓ Google Calendar já está conectado!')
-            return redirect('prospecta:dashboard')
-    except GoogleCalendarIntegration.DoesNotExist:
-        pass
-
-    # Redirecionar para Google login do allauth
-    return redirect('google_login')
-
-
-@login_required(login_url='account_login')
-def google_calendar_status(request):
-    """Verificar status de conexão com Google Calendar"""
-    try:
-        integration = GoogleCalendarIntegration.objects.get(user=request.user)
-        status = {
-            'connected': integration.is_active and bool(integration.access_token),
-            'calendar_id': integration.calendar_id,
-            'created_at': integration.created_at.isoformat() if integration.created_at else None,
-        }
-    except GoogleCalendarIntegration.DoesNotExist:
-        status = {'connected': False}
-
-    return JsonResponse(status)
-
 
 # ============================================================================
 # DOCUMENTOS
@@ -248,8 +211,6 @@ def create_meeting(request, pk):
 
         messages.success(request, f'Reunião "{title}" criada com sucesso!')
 
-        # Signal irá sincronizar automaticamente com Google Calendar
-
         return redirect('prospecta:opportunity_meetings', pk=pk)
 
     # GET - mostrar formulário
@@ -327,36 +288,11 @@ def delete_meeting(request, pk):
         return redirect('prospecta:opportunity_meetings', pk=opportunity_pk)
 
     meeting_title = meeting.title
-    meeting.delete()  # Pre-delete signal irá remover do Google Calendar
+    meeting.delete()
     messages.success(
         request, f'Reunião "{meeting_title}" deletada com sucesso!')
 
     return redirect('prospecta:opportunity_meetings', pk=opportunity_pk)
-
-
-# ============================================================================
-# INTEGRAÇÃO GOOGLE CALENDAR
-# ============================================================================
-
-@login_required(login_url='account_login')
-def google_calendar_callback(request):
-    """Callback OAuth do Google Calendar"""
-    # TODO: Implementar OAuth flow completo
-    # 1. Receber code do Google
-    # 2. Trocar code por access_token e refresh_token
-    # 3. Salvar tokens no GoogleCalendarIntegration
-    # 4. Redirecionar usuário
-
-    code = request.GET.get('code')
-
-    if not code:
-        messages.error(request, 'Erro na autenticação com Google.')
-        return redirect('prospecta:dashboard')
-
-    # Por enquanto, apenas placeholder
-    messages.info(
-        request, 'Integração com Google Calendar em desenvolvimento.')
-    return redirect('prospecta:dashboard')
 
 
 # ============================================================================

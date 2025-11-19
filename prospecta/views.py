@@ -333,25 +333,41 @@ def opportunity_create(request):
     context = get_user_context(request.user)
 
     if request.method == 'POST':
+        # Tratar valor decimal vazio
+        value_brl = request.POST.get('value_brl')
+        if value_brl == '':
+            value_brl = None
+        
         opportunity = Opportunity(
             title=request.POST['title'],
             description=request.POST.get('description', ''),
+            produto=request.POST.get('produto', ''),
             client_id=request.POST['client'],
             created_by=request.user,
             responsible_user_id=request.POST.get(
                 'responsible_user', request.user.id),
             sales_model_id=request.POST.get('sales_model'),
-            value_brl=request.POST.get('value_brl'),
-            expected_delivery_date=request.POST.get('expected_delivery_date'),
+            value_brl=value_brl,
+            expected_delivery_date=request.POST.get('expected_delivery_date') or None,
         )
         opportunity.save()
 
+        # Adicionar parcerias (ManyToMany precisa ser salvo após o objeto)
+        partnerships_ids = request.POST.getlist('partnerships')
+        if partnerships_ids:
+            opportunity.partnerships.set(partnerships_ids)
+
         # Criar histórico
+        partnerships_names = ', '.join([c.name for c in opportunity.partnerships.all()])
+        history_details = f'Oportunidade criada por {request.user.get_full_name()}'
+        if partnerships_names:
+            history_details += f' com parcerias: {partnerships_names}'
+        
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
             change_type='criacao',
-            change_details=f'Oportunidade criada por {request.user.get_full_name()}'
+            change_details=history_details
         )
 
         messages.success(request, 'Oportunidade criada com sucesso!')
@@ -392,11 +408,17 @@ def opportunity_detail(request, pk):
         stage__opportunity=opportunity
     ).count()
 
+    # Buscar histórico de atividades relacionadas à oportunidade
+    activity_history = ActivityHistory.objects.filter(
+        activity__stage__opportunity=opportunity
+    ).select_related('activity', 'changed_by')
+
     context = get_user_context(request.user)
     context.update({
         'opportunity': opportunity,
         'stages': opportunity.stages.all().order_by('order'),
         'history': opportunity.history.all()[:10],
+        'activity_history': activity_history,
         'available_users': available_users,
         'opportunity_activity_count': opportunity_activity_count,
     })
@@ -411,22 +433,38 @@ def opportunity_update(request, pk):
     opportunity = get_object_or_404(Opportunity, pk=pk)
 
     if request.method == 'POST':
+        # Tratar valor decimal vazio
+        value_brl = request.POST.get('value_brl')
+        if value_brl == '':
+            value_brl = None
+        
         opportunity.title = request.POST['title']
         opportunity.description = request.POST.get('description', '')
+        opportunity.produto = request.POST.get('produto', '')
         opportunity.client_id = request.POST['client']
         opportunity.responsible_user_id = request.POST['responsible_user']
-        opportunity.sales_model_id = request.POST.get('sales_model')
-        opportunity.value_brl = request.POST.get('value_brl')
+        opportunity.sales_model_id = request.POST.get('sales_model') or None
+        opportunity.value_brl = value_brl
         opportunity.expected_delivery_date = request.POST.get(
-            'expected_delivery_date')
+            'expected_delivery_date') or None
         opportunity.status = request.POST.get('status', opportunity.status)
         opportunity.save()
 
+        # Atualizar parcerias
+        partnerships_ids = request.POST.getlist('partnerships')
+        opportunity.partnerships.set(partnerships_ids)
+
+        # Criar histórico
+        partnerships_names = ', '.join([c.name for c in opportunity.partnerships.all()])
+        history_details = f'Oportunidade atualizada por {request.user.get_full_name()}'
+        if partnerships_names:
+            history_details += f' - Parcerias: {partnerships_names}'
+        
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
             change_type='atualizacao',
-            change_details=f'Oportunidade atualizada por {request.user.get_full_name()}'
+            change_details=history_details
         )
 
         messages.success(request, 'Oportunidade atualizada com sucesso!')
@@ -518,10 +556,10 @@ def opportunity_status_update(request, pk):
 
 @login_required(login_url='account_login')
 def clients_list(request):
-    """Lista de clientes"""
+    """Lista de empresas"""
     context = get_user_context(request.user)
 
-    # Visitantes não podem acessar clientes
+    # Visitantes não podem acessar empresas
     try:
         profile = request.user.profile
     except UserProfile.DoesNotExist:
@@ -529,7 +567,7 @@ def clients_list(request):
 
     if profile.is_visitor():
         messages.error(
-            request, 'Você não tem permissão para acessar clientes.')
+            request, 'Você não tem permissão para acessar empresas.')
         return redirect('prospecta:home')
 
     clients = Client.objects.all()
@@ -548,7 +586,7 @@ def clients_list(request):
 @login_required(login_url='account_login')
 @role_required('admin', 'gerente')
 def client_create(request):
-    """Criar novo cliente"""
+    """Criar nova empresa"""
     context = get_user_context(request.user)
 
     if request.method == 'POST':
@@ -560,7 +598,7 @@ def client_create(request):
             email=request.POST.get('email', ''),
         )
         client.save()
-        messages.success(request, 'Cliente criado com sucesso!')
+        messages.success(request, 'Empresa criada com sucesso!')
         return redirect('prospecta:client_detail', pk=client.pk)
 
     return render(request, 'prospecta/clients/form.html', context)
@@ -568,7 +606,7 @@ def client_create(request):
 
 @login_required(login_url='account_login')
 def client_detail(request, pk):
-    """Detalhes do cliente"""
+    """Detalhes da empresa"""
     # Visitantes não podem acessar
     try:
         profile = request.user.profile
@@ -577,7 +615,7 @@ def client_detail(request, pk):
 
     if profile.is_visitor():
         messages.error(
-            request, 'Você não tem permissão para acessar clientes.')
+            request, 'Você não tem permissão para acessar empresas.')
         return redirect('prospecta:home')
     client = get_object_or_404(Client, pk=pk)
     context = get_user_context(request.user)
@@ -593,7 +631,7 @@ def client_detail(request, pk):
 @login_required(login_url='account_login')
 @role_required('admin', 'gerente')
 def client_update(request, pk):
-    """Editar cliente"""
+    """Editar empresa"""
     client = get_object_or_404(Client, pk=pk)
 
     if request.method == 'POST':
@@ -603,7 +641,7 @@ def client_update(request, pk):
         client.phone = request.POST.get('phone', '')
         client.email = request.POST.get('email', '')
         client.save()
-        messages.success(request, 'Cliente atualizado com sucesso!')
+        messages.success(request, 'Empresa atualizada com sucesso!')
         return redirect('prospecta:client_detail', pk=client.pk)
 
     context = get_user_context(request.user)
@@ -920,13 +958,13 @@ def activity_delete(request, pk):
 
 
 # ============================================================================
-# CONTACTS (Contatos de Cliente)
+# CONTACTS (Contatos de Empresa)
 # ============================================================================
 
 @login_required(login_url='account_login')
 @role_required('admin', 'gerente')
 def contact_create(request, client_pk):
-    """Criar novo contato em um cliente"""
+    """Criar novo contato em uma empresa"""
     client = get_object_or_404(Client, pk=client_pk)
     context = get_user_context(request.user)
 
@@ -1206,7 +1244,7 @@ def toggle_participant_notifications(request, pk, participant_id):
 @login_required(login_url='account_login')
 @require_http_methods(["POST"])
 def search_global(request):
-    """Busca global de oportunidades, clientes, atividades"""
+    """Busca global de oportunidades, empresas, atividades"""
     query = request.POST.get('q', '').strip()
 
     if not query or len(query) < 2:

@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Client, Contact, SalesModel, Opportunity, Stage, Activity,
     OpportunityHistory, StageHistory, ActivityHistory, UserProfile,
-    OpportunityDocument, ActivityAttachment, Meeting, GoogleCalendarIntegration
+    OpportunityDocument, ActivityAttachment, Meeting
 )
 
 
@@ -54,11 +54,12 @@ class SalesModelAdmin(admin.ModelAdmin):
 
 @admin.register(Opportunity)
 class OpportunityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'client', 'status', 'value_brl',
+    list_display = ('title', 'produto', 'client', 'status', 'value_brl',
                     'responsible_user', 'created_at')
-    search_fields = ('title', 'client__name')
+    search_fields = ('title', 'produto', 'client__name')
     list_filter = ('status', 'created_at', 'responsible_user')
     readonly_fields = ('id', 'created_at', 'updated_at')
+    filter_horizontal = ('partnerships',)
 
 
 @admin.register(Stage)
@@ -145,11 +146,10 @@ class ActivityAttachmentAdmin(admin.ModelAdmin):
 @admin.register(Meeting)
 class MeetingAdmin(admin.ModelAdmin):
     list_display = ('title', 'opportunity', 'meeting_type', 'status',
-                    'start_datetime', 'organizer', 'synced_with_google')
+                    'start_datetime', 'organizer')
     search_fields = ('title', 'opportunity__title', 'description')
-    list_filter = ('meeting_type', 'status',
-                   'synced_with_google', 'start_datetime')
-    readonly_fields = ('id', 'google_event_id', 'created_at', 'updated_at')
+    list_filter = ('meeting_type', 'status', 'start_datetime')
+    readonly_fields = ('id', 'created_at', 'updated_at')
     filter_horizontal = ('attendees',)
     fieldsets = (
         ('Informações Básicas', {
@@ -166,35 +166,6 @@ class MeetingAdmin(admin.ModelAdmin):
         }),
         ('Notas', {
             'fields': ('notes', 'action_items')
-        }),
-        ('Google Calendar', {
-            'fields': ('google_event_id', 'synced_with_google'),
-            'classes': ('collapse',)
-        }),
-        ('Metadados', {
-            'fields': ('id', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-
-@admin.register(GoogleCalendarIntegration)
-class GoogleCalendarIntegrationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'calendar_id', 'is_active',
-                    'token_expiry', 'created_at')
-    search_fields = ('user__username', 'user__email')
-    list_filter = ('is_active', 'created_at')
-    readonly_fields = ('id', 'created_at', 'updated_at')
-    fieldsets = (
-        ('Usuário', {
-            'fields': ('user', 'is_active')
-        }),
-        ('Tokens OAuth', {
-            'fields': ('access_token', 'refresh_token', 'token_expiry'),
-            'classes': ('collapse',)
-        }),
-        ('Configurações', {
-            'fields': ('calendar_id',)
         }),
         ('Metadados', {
             'fields': ('id', 'created_at', 'updated_at'),
