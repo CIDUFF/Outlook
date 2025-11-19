@@ -333,16 +333,22 @@ def opportunity_create(request):
     context = get_user_context(request.user)
 
     if request.method == 'POST':
+        # Tratar valor decimal vazio
+        value_brl = request.POST.get('value_brl')
+        if value_brl == '':
+            value_brl = None
+        
         opportunity = Opportunity(
             title=request.POST['title'],
             description=request.POST.get('description', ''),
+            produto=request.POST.get('produto', ''),
             client_id=request.POST['client'],
             created_by=request.user,
             responsible_user_id=request.POST.get(
                 'responsible_user', request.user.id),
             sales_model_id=request.POST.get('sales_model'),
-            value_brl=request.POST.get('value_brl'),
-            expected_delivery_date=request.POST.get('expected_delivery_date'),
+            value_brl=value_brl,
+            expected_delivery_date=request.POST.get('expected_delivery_date') or None,
         )
         opportunity.save()
 
@@ -427,14 +433,20 @@ def opportunity_update(request, pk):
     opportunity = get_object_or_404(Opportunity, pk=pk)
 
     if request.method == 'POST':
+        # Tratar valor decimal vazio
+        value_brl = request.POST.get('value_brl')
+        if value_brl == '':
+            value_brl = None
+        
         opportunity.title = request.POST['title']
         opportunity.description = request.POST.get('description', '')
+        opportunity.produto = request.POST.get('produto', '')
         opportunity.client_id = request.POST['client']
         opportunity.responsible_user_id = request.POST['responsible_user']
-        opportunity.sales_model_id = request.POST.get('sales_model')
-        opportunity.value_brl = request.POST.get('value_brl')
+        opportunity.sales_model_id = request.POST.get('sales_model') or None
+        opportunity.value_brl = value_brl
         opportunity.expected_delivery_date = request.POST.get(
-            'expected_delivery_date')
+            'expected_delivery_date') or None
         opportunity.status = request.POST.get('status', opportunity.status)
         opportunity.save()
 

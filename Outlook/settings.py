@@ -30,6 +30,13 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = [host.strip() for host in config(
     'ALLOWED_HOSTS', default='127.0.0.1,localhost,cid-uff.net,prospecta.cid-uff.net').split(',')]
 
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = [
+    'https://prospecta.cid-uff.net',
+    'https://cid-uff.net',
+    'http://localhost:8555',
+    'http://127.0.0.1:8555',
+]
 
 # Application definition
 
@@ -181,6 +188,9 @@ SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_ADAPTER = 'prospecta.adapters.CustomSocialAccountAdapter'
+
+# Protocol configuration for OAuth callbacks
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = config('ACCOUNT_DEFAULT_HTTP_PROTOCOL', default='https')
 
 LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'prospecta:dashboard'

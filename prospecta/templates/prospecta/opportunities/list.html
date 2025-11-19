@@ -59,6 +59,7 @@
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Título</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Produto</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Cliente</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Parcerias</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Valor</th>
@@ -72,6 +73,13 @@
                     {% for opp in opportunities %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ opp.title }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {% if opp.produto %}
+                                {{ opp.produto }}
+                            {% else %}
+                                <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ opp.client.name }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">
                             {% if opp.partnerships.exists %}

@@ -142,6 +142,8 @@ class Opportunity(models.Model):
     title = models.CharField(max_length=255, verbose_name='Título')
     description = models.TextField(
         blank=True, null=True, verbose_name='Descrição')
+    produto = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name='Produto')
     client = models.ForeignKey(Client, on_delete=models.CASCADE,
                                related_name='opportunities', verbose_name='Cliente')
     partnerships = models.ManyToManyField(

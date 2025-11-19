@@ -60,6 +60,14 @@
         </div>
     </div>
 
+    <!-- Produto -->
+    {% if opportunity.produto %}
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Produto</h2>
+        <p class="text-gray-700">{{ opportunity.produto }}</p>
+    </div>
+    {% endif %}
+
     <!-- Description -->
     {% if opportunity.description %}
     <div class="bg-white rounded-lg shadow p-6">

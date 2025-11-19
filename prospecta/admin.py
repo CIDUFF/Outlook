@@ -54,9 +54,9 @@ class SalesModelAdmin(admin.ModelAdmin):
 
 @admin.register(Opportunity)
 class OpportunityAdmin(admin.ModelAdmin):
-    list_display = ('title', 'client', 'status', 'value_brl',
+    list_display = ('title', 'produto', 'client', 'status', 'value_brl',
                     'responsible_user', 'created_at')
-    search_fields = ('title', 'client__name')
+    search_fields = ('title', 'produto', 'client__name')
     list_filter = ('status', 'created_at', 'responsible_user')
     readonly_fields = ('id', 'created_at', 'updated_at')
     filter_horizontal = ('partnerships',)
