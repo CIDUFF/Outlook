@@ -39,3 +39,4 @@ db.sqlite3-journal
 .coverage
 htmlcov/
 node_modules/
+.md
