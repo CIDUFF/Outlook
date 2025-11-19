@@ -28,7 +28,7 @@ SECRET_KEY = config(
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = [host.strip() for host in config(
-    'ALLOWED_HOSTS', default='127.0.0.1,localhost,cid-uff.net').split(',')]
+    'ALLOWED_HOSTS', default='127.0.0.1,localhost,cid-uff.net,prospecta.cid-uff.net').split(',')]
 
 
 # Application definition
