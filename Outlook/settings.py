@@ -193,7 +193,13 @@ SOCIALACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_ADAPTER = 'prospecta.adapters.CustomSocialAccountAdapter'
 
 # Protocol configuration for OAuth callbacks
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = config('ACCOUNT_DEFAULT_HTTP_PROTOCOL', default='https')
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = config(
+    'ACCOUNT_DEFAULT_HTTP_PROTOCOL', default='https')
+
+# Proxy Reverso - Confiar nos headers do Apache
+# ProxyPreserveHost + X-Forwarded-Proto são suficientes
+USE_X_FORWARDED_PROTO = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 LOGIN_URL = 'account_login'
 LOGIN_REDIRECT_URL = 'prospecta:dashboard'
