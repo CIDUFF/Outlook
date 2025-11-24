@@ -18,7 +18,7 @@ print("\n🔍 Configurando Social App do Google...\n")
 # 1. Verificar/Criar Site
 site, created = Site.objects.get_or_create(
     id=1,
-    defaults={'domain': 'localhost:8555', 'name': 'PROSPECTA'}
+    defaults={'domain': 'prospecta.cid-uff.net', 'name': 'PROSPECTA'}
 )
 print(f"{'✓' if not created else '+'} Site: {site.domain}")
 
