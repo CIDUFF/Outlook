@@ -1,0 +1,86 @@
+{% extends 'prospecta/base.html' %}
+
+{% block title %}Deletar Oportunidade - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="bg-red-600 px-6 py-4">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-white text-2xl mr-3"></i>
+                <h1 class="text-xl font-bold text-white">Confirmar Exclusão</h1>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <div class="mb-6">
+                <p class="text-gray-700 text-lg">
+                    Você tem certeza que deseja deletar a oportunidade:
+                </p>
+                <p class="text-2xl font-bold text-gray-900 mt-2">
+                    {{ opportunity.title }}
+                </p>
+            </div>
+
+            <!-- Opportunity Details -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-gray-700 mb-3">Detalhes da Oportunidade:</h3>
+                <dl class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <dt class="text-gray-500">Cliente</dt>
+                        <dd class="font-medium text-gray-900">{{ opportunity.client.name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Status</dt>
+                        <dd class="font-medium text-gray-900">{{ opportunity.get_status_display }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Valor</dt>
+                        <dd class="font-medium text-gray-900">R$ {{ opportunity.value_brl|floatformat:2|default:"N/A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Responsável</dt>
+                        <dd class="font-medium text-gray-900">{{ opportunity.responsible_user.get_full_name|default:opportunity.responsible_user.username }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Criado em</dt>
+                        <dd class="font-medium text-gray-900">{{ opportunity.created_at|date:'d/m/Y H:i' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Etapas</dt>
+                        <dd class="font-medium text-gray-900">{{ opportunity.stages.count }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Warning -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <i class="fas fa-exclamation-circle text-red-600 mt-0.5 mr-3"></i>
+                    <div>
+                        <h4 class="font-semibold text-red-800">Atenção!</h4>
+                        <p class="text-red-700 text-sm mt-1">
+                            Esta ação é <strong>irreversível</strong>. Todas as etapas, atividades e histórico relacionados a esta oportunidade também serão deletados.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'prospecta:opportunities_list' %}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+                    <i class="fas fa-times mr-2"></i>Cancelar
+                </a>
+                <form method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                        <i class="fas fa-trash mr-2"></i>Sim, Deletar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

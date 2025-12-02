@@ -14,6 +14,7 @@ from .models import (
     Stage, Activity, OpportunityHistory, StageHistory, ActivityHistory,
     OpportunityParticipant
 )
+from .utils import get_user_context, permission_required, permissions_required_all
 
 
 # ============================================================================
@@ -21,7 +22,10 @@ from .models import (
 # ============================================================================
 
 def role_required(*roles):
-    """Decorator para verificar role do usuário"""
+    """
+    Decorator para verificar role do usuário.
+    DEPRECADO: Use @permission_required('Nome da Permissão') de utils.py
+    """
     def decorator(view_func):
         def wrapper(request, *args, **kwargs):
             if request.user.is_authenticated:
@@ -37,7 +41,10 @@ def role_required(*roles):
 
 
 def write_permission_required(view_func):
-    """Decorator para verificar permissão de escrita (visitantes não podem)"""
+    """
+    Decorator para verificar permissão de escrita (visitantes não podem).
+    DEPRECADO: Use @permission_required('Criar/Editar ...') de utils.py
+    """
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated:
             try:
@@ -54,30 +61,8 @@ def write_permission_required(view_func):
     return wrapper
 
 
-def get_user_context(user):
-    """Retorna contexto com dados do usuário e suas permissões"""
-    context = {
-        'user': user,
-        'is_admin': False,
-        'is_manager': False,
-        'is_analyst': False,
-        'is_visitor': False,
-        'can_write': False,
-    }
-
-    if user.is_authenticated:
-        try:
-            profile = user.profile
-            context['profile'] = profile
-            context['is_admin'] = profile.is_admin()
-            context['is_manager'] = profile.is_manager()
-            context['is_analyst'] = profile.is_analyst()
-            context['is_visitor'] = profile.is_visitor()
-            context['can_write'] = profile.can_write()
-        except UserProfile.DoesNotExist:
-            pass
-
-    return context
+# NOTA: get_user_context foi movido para utils.py
+# Importado acima: from .utils import get_user_context
 
 
 # ============================================================================
@@ -119,27 +104,19 @@ def dashboard(request):
         profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
     # Dados baseados no role do usuário
-    if profile.is_admin():
-        # Administrador vê tudo
-        opportunities = Opportunity.objects.all()
-        activities = Activity.objects.all()
-        users = User.objects.all()
-    elif profile.is_manager():
-        # Gerente vê suas oportunidades e atividades
+    # Todos veem tudo, EXCETO visitantes que veem apenas suas próprias oportunidades
+    if profile.is_visitor():
+        # Visitante vê apenas suas próprias oportunidades e atividades
         opportunities = Opportunity.objects.filter(
             Q(created_by=request.user) | Q(responsible_user=request.user)
         )
-        activities = Activity.objects.filter(
-            Q(stage__opportunity__in=opportunities) |
-            Q(assigned_to=request.user)
-        )
-        users = None
-    else:
-        # Vendedor vê apenas suas oportunidades e atividades
-        opportunities = Opportunity.objects.filter(
-            responsible_user=request.user)
         activities = Activity.objects.filter(assigned_to=request.user)
         users = None
+    else:
+        # Admin, Gerente e Analista veem tudo
+        opportunities = Opportunity.objects.all()
+        activities = Activity.objects.all()
+        users = User.objects.all() if profile.is_admin() else None
 
     # KPIs - Oportunidades
     total_opportunities = opportunities.count()
@@ -293,16 +270,8 @@ def opportunities_list(request):
             request, 'Você não tem permissão para acessar oportunidades.')
         return redirect('prospecta:home')
 
-    # Filtros baseados no role
-    if profile.is_admin():
-        opportunities = Opportunity.objects.all()
-    elif profile.is_manager():
-        opportunities = Opportunity.objects.filter(
-            Q(created_by=request.user) | Q(responsible_user=request.user)
-        )
-    else:
-        opportunities = Opportunity.objects.filter(
-            responsible_user=request.user)
+    # Todos veem tudo (exceto visitantes que já foram redirecionados)
+    opportunities = Opportunity.objects.all()
 
     # Aplicar filtros
     status = request.GET.get('status')
@@ -337,7 +306,7 @@ def opportunity_create(request):
         value_brl = request.POST.get('value_brl')
         if value_brl == '':
             value_brl = None
-        
+
         opportunity = Opportunity(
             title=request.POST['title'],
             description=request.POST.get('description', ''),
@@ -348,7 +317,8 @@ def opportunity_create(request):
                 'responsible_user', request.user.id),
             sales_model_id=request.POST.get('sales_model'),
             value_brl=value_brl,
-            expected_delivery_date=request.POST.get('expected_delivery_date') or None,
+            expected_delivery_date=request.POST.get(
+                'expected_delivery_date') or None,
         )
         opportunity.save()
 
@@ -358,11 +328,12 @@ def opportunity_create(request):
             opportunity.partnerships.set(partnerships_ids)
 
         # Criar histórico
-        partnerships_names = ', '.join([c.name for c in opportunity.partnerships.all()])
+        partnerships_names = ', '.join(
+            [c.name for c in opportunity.partnerships.all()])
         history_details = f'Oportunidade criada por {request.user.get_full_name()}'
         if partnerships_names:
             history_details += f' com parcerias: {partnerships_names}'
-        
+
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
@@ -377,6 +348,7 @@ def opportunity_create(request):
         'clients': Client.objects.all(),
         'sales_models': SalesModel.objects.all(),
         'users': User.objects.filter(profile__is_active=True),
+        'selected_client': request.GET.get('client', ''),
     })
 
     return render(request, 'prospecta/opportunities/form.html', context)
@@ -388,11 +360,13 @@ def opportunity_detail(request, pk):
     """Detalhes de uma oportunidade"""
     opportunity = get_object_or_404(Opportunity, pk=pk)
 
-    # Verificar permissão
+    # Verificar permissão - visitantes não podem ver detalhes
     try:
         profile = request.user.profile
-        if not profile.is_admin() and opportunity.responsible_user != request.user and opportunity.created_by != request.user:
-            return redirect('prospecta:opportunities_list')
+        if profile.is_visitor():
+            messages.error(
+                request, 'Você não tem permissão para ver detalhes de oportunidades.')
+            return redirect('prospecta:home')
     except UserProfile.DoesNotExist:
         return redirect('account_login')
 
@@ -437,7 +411,7 @@ def opportunity_update(request, pk):
         value_brl = request.POST.get('value_brl')
         if value_brl == '':
             value_brl = None
-        
+
         opportunity.title = request.POST['title']
         opportunity.description = request.POST.get('description', '')
         opportunity.produto = request.POST.get('produto', '')
@@ -455,11 +429,12 @@ def opportunity_update(request, pk):
         opportunity.partnerships.set(partnerships_ids)
 
         # Criar histórico
-        partnerships_names = ', '.join([c.name for c in opportunity.partnerships.all()])
+        partnerships_names = ', '.join(
+            [c.name for c in opportunity.partnerships.all()])
         history_details = f'Oportunidade atualizada por {request.user.get_full_name()}'
         if partnerships_names:
             history_details += f' - Parcerias: {partnerships_names}'
-        
+
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
@@ -483,9 +458,9 @@ def opportunity_update(request, pk):
 
 
 @login_required(login_url='account_login')
-@role_required('admin', 'gerente')
+@role_required('admin')
 def opportunity_delete(request, pk):
-    """Deletar oportunidade"""
+    """Deletar oportunidade - apenas administradores"""
     opportunity = get_object_or_404(Opportunity, pk=pk)
 
     if request.method == 'POST':
@@ -505,18 +480,13 @@ def opportunities_filter(request):
     """HTMX endpoint para filtrar oportunidades"""
     try:
         profile = request.user.profile
+        if profile.is_visitor():
+            return HttpResponse('')
     except UserProfile.DoesNotExist:
         return HttpResponse('')
 
-    if profile.is_admin():
-        opportunities = Opportunity.objects.all()
-    elif profile.is_manager():
-        opportunities = Opportunity.objects.filter(
-            Q(created_by=request.user) | Q(responsible_user=request.user)
-        )
-    else:
-        opportunities = Opportunity.objects.filter(
-            responsible_user=request.user)
+    # Todos veem tudo (exceto visitantes)
+    opportunities = Opportunity.objects.all()
 
     status = request.GET.get('status')
     if status:
@@ -670,14 +640,8 @@ def activities_list(request):
             request, 'Você não tem permissão para acessar atividades.')
         return redirect('prospecta:home')
 
-    if profile.is_admin():
-        activities = Activity.objects.all()
-    elif profile.is_manager():
-        activities = Activity.objects.filter(
-            Q(assigned_to=request.user) | Q(delegated_by=request.user)
-        )
-    else:
-        activities = Activity.objects.filter(assigned_to=request.user)
+    # Todos veem tudo (exceto visitantes que já foram redirecionados)
+    activities = Activity.objects.all()
 
     status = request.GET.get('status')
     if status:
@@ -735,12 +699,13 @@ def reports(request):
     except UserProfile.DoesNotExist:
         profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    # Dados para relatórios
-    if profile.is_admin():
-        opportunities = Opportunity.objects.all()
-    else:
+    # Dados para relatórios - todos veem tudo (exceto visitantes via decorator)
+    if profile.is_visitor():
         opportunities = Opportunity.objects.filter(
-            responsible_user=request.user)
+            Q(created_by=request.user) | Q(responsible_user=request.user)
+        )
+    else:
+        opportunities = Opportunity.objects.all()
 
     # Contar oportunidades por status
     total_opp = opportunities.count()

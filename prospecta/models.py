@@ -60,6 +60,74 @@ class UserProfile(models.Model):
         """Retorna True se o usuário pode ler (todos podem)"""
         return True
 
+    def has_permission(self, permission_name):
+        """
+        Verifica se o usuário tem uma permissão específica baseada na PermissionsMatrix.
+        Admins sempre têm todas as permissões.
+
+        Args:
+            permission_name: Nome da permissão (ex: 'Criar Oportunidades')
+        Returns:
+            bool: True se o usuário tem a permissão
+        """
+        # Admins têm todas as permissões
+        if self.role == 'admin':
+            return True
+
+        try:
+            # Importa aqui para evitar importação circular
+            from prospecta.models import PermissionsMatrix
+            matrix = PermissionsMatrix.objects.filter(role=self.role).first()
+            if matrix and matrix.permissions:
+                return matrix.permissions.get(permission_name, False)
+        except Exception:
+            pass
+
+        return False
+
+    def get_all_permissions(self):
+        """
+        Retorna todas as permissões do usuário baseadas na PermissionsMatrix.
+        Admins recebem todas as permissões como True.
+
+        Returns:
+            dict: Dicionário de permissões {nome: bool}
+        """
+        default_permissions = {
+            'Visualizar Dashboard': True,
+            'Criar Oportunidades': False,
+            'Editar Oportunidades': False,
+            'Excluir Oportunidades': False,
+            'Criar Clientes': False,
+            'Editar Clientes': False,
+            'Excluir Clientes': False,
+            'Criar Atividades': False,
+            'Editar Atividades': False,
+            'Excluir Atividades': False,
+            'Aprovar Atividades': False,
+            'Gerenciar Usuários': False,
+            'Gerenciar Permissões': False,
+            'Ver Relatórios': False,
+            'Exportar Dados': False,
+        }
+
+        # Admins têm todas as permissões
+        if self.role == 'admin':
+            return {k: True for k in default_permissions}
+
+        try:
+            from prospecta.models import PermissionsMatrix
+            matrix = PermissionsMatrix.objects.filter(role=self.role).first()
+            if matrix and matrix.permissions:
+                # Merge permissões padrão com as da matriz
+                permissions = default_permissions.copy()
+                permissions.update(matrix.permissions)
+                return permissions
+        except Exception:
+            pass
+
+        return default_permissions
+
 
 class Client(models.Model):
     """Empresas"""
@@ -521,6 +589,3 @@ class Meeting(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.start_datetime.strftime('%d/%m/%Y %H:%M')}"
-
-
-

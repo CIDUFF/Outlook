@@ -50,8 +50,13 @@
                 id="id_username" 
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="seu_usuario"
+                pattern="^[a-zA-Z0-9_]+$"
                 required
             >
+            <p class="mt-1 text-xs text-gray-500">
+                <i class="fas fa-info-circle mr-1"></i>
+                Use apenas letras, números e underscore (_). <strong>Não use espaços.</strong>
+            </p>
             {% if form.username.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
             {% endif %}

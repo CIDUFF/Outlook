@@ -128,6 +128,11 @@
                                 <i class="fas fa-edit mr-1"></i>Editar
                             </a>
                             {% endif %}
+                            {% if user.is_superuser %}
+                            <a href="{% url 'prospecta:opportunity_delete' pk=opp.pk %}" class="text-red-600 hover:text-red-700 font-medium" onclick="return confirm('Tem certeza que deseja deletar esta oportunidade?');">
+                                <i class="fas fa-trash mr-1"></i>Deletar
+                            </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
