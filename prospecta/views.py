@@ -427,10 +427,18 @@ def opportunity_update(request, pk):
     opportunity = get_object_or_404(Opportunity, pk=pk)
 
     if request.method == 'POST':
-        # Tratar valor decimal vazio
-        value_brl = request.POST.get('value_brl')
+        # Tratar valor decimal - manter valor original se não for fornecido
+        value_brl = request.POST.get('value_brl', '').strip()
         if value_brl == '':
-            value_brl = None
+            # Manter o valor original se o campo estiver vazio
+            value_brl = opportunity.value_brl
+        else:
+            # Converter para Decimal se um valor foi fornecido
+            try:
+                from decimal import Decimal
+                value_brl = Decimal(value_brl)
+            except:
+                value_brl = opportunity.value_brl
 
         opportunity.title = request.POST['title']
         opportunity.description = request.POST.get('description', '')
