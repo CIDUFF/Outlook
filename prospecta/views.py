@@ -661,16 +661,43 @@ def activities_list(request):
         return redirect('prospecta:home')
 
     # Todos veem tudo (exceto visitantes que já foram redirecionados)
-    activities = Activity.objects.all()
+    activities = Activity.objects.all().select_related(
+        'stage', 'stage__opportunity', 'assigned_to', 'delegated_by', 'verifier'
+    )
 
     status = request.GET.get('status')
     if status:
         activities = activities.filter(status=status)
 
+    # Obter tipo de visualização (tabela ou hierarquia)
+    view_type = request.GET.get('view', 'table')
+
+    # Criar estrutura hierárquica: Oportunidade -> Etapa -> Atividades
+    hierarchy = {}
+    for activity in activities.order_by('stage__opportunity__title', 'stage__order', '-created_at'):
+        opportunity = activity.stage.opportunity
+        stage = activity.stage
+        
+        if opportunity.pk not in hierarchy:
+            hierarchy[opportunity.pk] = {
+                'opportunity': opportunity,
+                'stages': {}
+            }
+        
+        if stage.pk not in hierarchy[opportunity.pk]['stages']:
+            hierarchy[opportunity.pk]['stages'][stage.pk] = {
+                'stage': stage,
+                'activities': []
+            }
+        
+        hierarchy[opportunity.pk]['stages'][stage.pk]['activities'].append(activity)
+
     context.update({
         'activities': activities.order_by('-created_at'),
         'pending_count': activities.filter(status='pendente').count(),
         'status_choices': Activity.STATUS_CHOICES,
+        'view_type': view_type,
+        'hierarchy': hierarchy,
     })
 
     return render(request, 'prospecta/activities/list.html', context)
