@@ -296,13 +296,16 @@ def permissions_matrix(request):
     # Se for POST, salvar as permissões
     if request.method == 'POST':
         from django.contrib import messages
+        from django.utils.text import slugify
 
         # Processar cada role
         for role in ['admin', 'gerente', 'analista', 'visitante']:
             # Obter permissions para este role do POST
             permissions_dict = {}
             for permission in default_permissions_map[role]['permissions'].keys():
-                field_name = f"{role}_{permission.lower().replace(' ', '_')}"
+                # Usar slugify para manter consistência com o template
+                field_name = f"{role}_{slugify(permission)}"
+                # Checkbox marcado envia valor, desmarcado não envia nada
                 permissions_dict[permission] = field_name in request.POST
 
             # Salvar no banco (ou atualizar se existir)
