@@ -13,7 +13,8 @@ from .models import (
     UserProfile, Client, Contact, SalesModel, Opportunity,
     Stage, Activity, OpportunityHistory, StageHistory, ActivityHistory,
     OpportunityParticipant, Notification, ActivityComment,
-    ActivityAttachment, OpportunityDocument, OpportunityCustomValue
+    ActivityAttachment, OpportunityDocument, OpportunityCustomValue,
+    OpportunityStatus
 )
 from .utils import get_user_context, permission_required, permissions_required_all
 from .notifications import (
@@ -297,6 +298,7 @@ def opportunities_list(request):
         'opportunities': opportunities,
         'clients': Client.objects.all(),
         'status_choices': Opportunity.STATUS_CHOICES,
+        'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
     })
 
     return render(request, 'prospecta/opportunities/list.html', context)
@@ -437,6 +439,8 @@ def opportunity_detail(request, pk):
         'activity_history': activity_history,
         'available_users': available_users,
         'opportunity_activity_count': opportunity_activity_count,
+        'status_choices': Opportunity.STATUS_CHOICES,
+        'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
     })
 
     return render(request, 'prospecta/opportunities/detail.html', context)
@@ -553,6 +557,7 @@ def opportunity_update(request, pk):
         'sales_models': SalesModel.objects.all(),
         'users': User.objects.filter(profile__is_active=True),
         'status_choices': Opportunity.STATUS_CHOICES,
+        'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
     })
 
     return render(request, 'prospecta/opportunities/form.html', context)
@@ -594,7 +599,8 @@ def opportunities_filter(request):
         opportunities = opportunities.filter(status=status)
 
     return render(request, 'prospecta/components/opportunities_table.html', {
-        'opportunities': opportunities
+        'opportunities': opportunities,
+        'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
     })
 
 
@@ -605,19 +611,34 @@ def opportunity_status_update(request, pk):
     opportunity = get_object_or_404(Opportunity, pk=pk)
     new_status = request.POST.get('status')
 
-    if new_status in dict(Opportunity.STATUS_CHOICES):
+    # Verificar se o status é válido (nos status padrão ou nos status customizados)
+    valid_default_statuses = dict(Opportunity.STATUS_CHOICES).keys()
+    valid_custom_statuses = OpportunityStatus.objects.filter(is_active=True).values_list('slug', flat=True)
+    
+    if new_status in valid_default_statuses or new_status in valid_custom_statuses:
+        old_status = opportunity.status
         opportunity.status = new_status
         opportunity.save()
+
+        # Tentar obter o nome do status para o histórico
+        status_name = new_status
+        status_obj = OpportunityStatus.objects.filter(slug=new_status).first()
+        if status_obj:
+            status_name = status_obj.name
+        else:
+            # Fallback para status padrão
+            status_name = dict(Opportunity.STATUS_CHOICES).get(new_status, new_status)
 
         OpportunityHistory.objects.create(
             opportunity=opportunity,
             changed_by=request.user,
             change_type='atualizacao_status',
-            change_details=f'Status alterado para {new_status} por {request.user.get_full_name()}'
+            change_details=f'Status alterado para {status_name} por {request.user.get_full_name()}'
         )
 
     return render(request, 'prospecta/components/opportunity_badge.html', {
-        'opportunity': opportunity
+        'opportunity': opportunity,
+        'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
     })
 
 

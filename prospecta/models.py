@@ -760,3 +760,58 @@ class ActivityComment(models.Model):
 
     def __str__(self):
         return f"Comentário de {self.author.get_full_name()} em {self.activity.title}"
+
+
+# ============================================================================
+# STATUS DE OPORTUNIDADES (CONFIGURÁVEL)
+# ============================================================================
+
+class OpportunityStatus(models.Model):
+    """Status configuráveis para oportunidades"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False, verbose_name='ID')
+    name = models.CharField(max_length=100, unique=True, verbose_name='Nome')
+    slug = models.SlugField(max_length=100, unique=True, verbose_name='Slug',
+                            help_text='Identificador único (ex: em_andamento)')
+    color = models.CharField(max_length=50, default='gray', verbose_name='Cor',
+                             help_text='Cor do badge (ex: blue, green, red, yellow, purple, gray)')
+    icon = models.CharField(max_length=50, blank=True, null=True, verbose_name='Ícone',
+                            help_text='Classe do ícone FontAwesome (ex: fa-check)')
+    description = models.TextField(blank=True, null=True, verbose_name='Descrição')
+    order = models.IntegerField(default=0, verbose_name='Ordem',
+                                help_text='Ordem de exibição na lista')
+    is_active = models.BooleanField(default=True, verbose_name='Ativo')
+    is_default = models.BooleanField(default=False, verbose_name='Padrão',
+                                     help_text='Status padrão para novas oportunidades')
+    is_closed = models.BooleanField(default=False, verbose_name='Fechado',
+                                    help_text='Indica se o status representa uma oportunidade fechada')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
+
+    class Meta:
+        db_table = 'tab_opportunity_status'
+        verbose_name = 'Status de Oportunidade'
+        verbose_name_plural = 'Status de Oportunidades'
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        # Se este status é marcado como padrão, remove o padrão dos outros
+        if self.is_default:
+            OpportunityStatus.objects.filter(is_default=True).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_default(cls):
+        """Retorna o status padrão ou o primeiro status ativo"""
+        default = cls.objects.filter(is_default=True, is_active=True).first()
+        if not default:
+            default = cls.objects.filter(is_active=True).first()
+        return default
+
+    @classmethod
+    def get_choices(cls):
+        """Retorna choices para uso em formulários"""
+        return [(s.slug, s.name) for s in cls.objects.filter(is_active=True)]

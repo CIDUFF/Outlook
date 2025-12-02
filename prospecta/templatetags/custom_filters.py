@@ -1,5 +1,6 @@
 from django import template
 from decimal import Decimal
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -103,3 +104,67 @@ def add_decimal(value1, value2):
         return v1 + v2
     except (ValueError, TypeError):
         return Decimal('0')
+
+
+@register.simple_tag
+def opportunity_status_badge(opportunity, opportunity_statuses=None):
+    """
+    Renderiza o badge de status de uma oportunidade.
+    Primeiro tenta usar os status customizados (OpportunityStatus),
+    caso não encontre, usa os status padrão (hardcoded).
+    
+    Uso: {% opportunity_status_badge opportunity opportunity_statuses %}
+    """
+    status_value = opportunity.status
+    
+    # Tentar buscar status customizado
+    if opportunity_statuses:
+        for status_obj in opportunity_statuses:
+            if status_obj.slug == status_value:
+                icon_html = f'<i class="fas {status_obj.icon} mr-1"></i>' if status_obj.icon else ''
+                return mark_safe(
+                    f'<span class="px-3 py-1 bg-{status_obj.color}-100 text-{status_obj.color}-800 '
+                    f'rounded-full text-sm font-semibold">{icon_html}{status_obj.name}</span>'
+                )
+    
+    # Fallback para status padrão (hardcoded)
+    status_mapping = {
+        'aberta': ('blue', 'Aberta', 'fa-folder-open'),
+        'em_andamento': ('yellow', 'Em Andamento', 'fa-spinner'),
+        'ganha': ('green', 'Ganha', 'fa-trophy'),
+        'perdida': ('red', 'Perdida', 'fa-times-circle'),
+        'cancelada': ('gray', 'Cancelada', 'fa-ban'),
+    }
+    
+    color, label, icon = status_mapping.get(status_value, ('gray', status_value, ''))
+    icon_html = f'<i class="fas {icon} mr-1"></i>' if icon else ''
+    
+    return mark_safe(
+        f'<span class="px-3 py-1 bg-{color}-100 text-{color}-800 '
+        f'rounded-full text-sm font-semibold">{icon_html}{label}</span>'
+    )
+
+
+@register.simple_tag
+def get_status_display(status_value, opportunity_statuses=None):
+    """
+    Retorna apenas o nome do status para exibição.
+    
+    Uso: {% get_status_display opportunity.status opportunity_statuses %}
+    """
+    # Tentar buscar status customizado
+    if opportunity_statuses:
+        for status_obj in opportunity_statuses:
+            if status_obj.slug == status_value:
+                return status_obj.name
+    
+    # Fallback para status padrão
+    status_mapping = {
+        'aberta': 'Aberta',
+        'em_andamento': 'Em Andamento',
+        'ganha': 'Ganha',
+        'perdida': 'Perdida',
+        'cancelada': 'Cancelada',
+    }
+    
+    return status_mapping.get(status_value, status_value)

@@ -29,6 +29,15 @@ urlpatterns = [
          admin_views.permissions_matrix, name='permissions_matrix'),
     path('gerenciar/ajuda/',
          admin_views.admin_help, name='admin_help'),
+    # Status de Oportunidades
+    path('gerenciar/status-oportunidades/',
+         admin_views.admin_opportunity_status_list, name='admin_opportunity_status_list'),
+    path('gerenciar/status-oportunidades/criar/',
+         admin_views.admin_opportunity_status_create, name='admin_opportunity_status_create'),
+    path('gerenciar/status-oportunidades/<uuid:status_id>/editar/',
+         admin_views.admin_opportunity_status_edit, name='admin_opportunity_status_edit'),
+    path('gerenciar/status-oportunidades/<uuid:status_id>/excluir/',
+         admin_views.admin_opportunity_status_delete, name='admin_opportunity_status_delete'),
 
     # Opportunities
     path('oportunidades/', views.opportunities_list, name='opportunities_list'),

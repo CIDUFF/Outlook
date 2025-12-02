@@ -1,4 +1,5 @@
 {% extends 'prospecta/base.html' %}
+{% load custom_filters %}
 
 {% block title %}{{ opportunity.title }} - PROSPECTA{% endblock %}
 
@@ -34,19 +35,31 @@
 
         <div class="bg-white rounded-lg shadow p-6">
             <p class="text-gray-600 text-sm">Status</p>
-            <p class="text-2xl font-bold mt-2">
-                {% if opportunity.status == 'aberta' %}
-                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">Aberta</span>
-                {% elif opportunity.status == 'em_andamento' %}
-                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">Em Andamento</span>
-                {% elif opportunity.status == 'ganha' %}
-                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">Ganha</span>
-                {% elif opportunity.status == 'perdida' %}
-                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">Perdida</span>
+            <div class="mt-2">
+                {% if can_write and is_manager %}
+                <!-- Seletor de Status para Managers -->
+                <form method="post" action="{% url 'prospecta:opportunity_status_update' pk=opportunity.pk %}" class="inline">
+                    {% csrf_token %}
+                    <select name="status" onchange="this.form.submit()" 
+                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium">
+                        {% for status_obj in opportunity_statuses %}
+                        <option value="{{ status_obj.slug }}" {% if opportunity.status == status_obj.slug %}selected{% endif %}>
+                            {{ status_obj.name }}
+                        </option>
+                        {% empty %}
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if opportunity.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                        {% endfor %}
+                    </select>
+                </form>
                 {% else %}
-                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-semibold">Cancelada</span>
+                <!-- Badge de Status (somente leitura) -->
+                <p class="text-2xl font-bold">
+                    {% opportunity_status_badge opportunity opportunity_statuses %}
+                </p>
                 {% endif %}
-            </p>
+            </div>
         </div>
 
         <div class="bg-white rounded-lg shadow p-6">

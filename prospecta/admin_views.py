@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
+from django.utils.text import slugify
 
-from .models import UserProfile
+from .models import UserProfile, OpportunityStatus
 
 
 def admin_required(view_func):
@@ -357,3 +358,191 @@ def admin_help(request):
     }
 
     return render(request, 'prospecta/admin/help.html', context)
+
+
+# ============================================================================
+# STATUS DE OPORTUNIDADES
+# ============================================================================
+
+@login_required(login_url='account_login')
+@admin_required
+def admin_opportunity_status_list(request):
+    """Lista todos os status de oportunidades"""
+    statuses = OpportunityStatus.objects.all().order_by('order', 'name')
+
+    context = {
+        'page_title': 'Status de Oportunidades',
+        'statuses': statuses,
+    }
+
+    return render(request, 'prospecta/admin/opportunity_status_list.html', context)
+
+
+@login_required(login_url='account_login')
+@admin_required
+def admin_opportunity_status_create(request):
+    """Cria um novo status de oportunidade"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        slug = request.POST.get('slug', '').strip()
+        color = request.POST.get('color', 'gray')
+        icon = request.POST.get('icon', '').strip() or None
+        description = request.POST.get('description', '').strip() or None
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        is_default = request.POST.get('is_default') == 'on'
+        is_closed = request.POST.get('is_closed') == 'on'
+
+        # Gerar slug automaticamente se não fornecido
+        if not slug:
+            slug = slugify(name)
+
+        # Validações
+        if not name:
+            messages.error(request, 'O nome do status é obrigatório.')
+            return redirect('prospecta:admin_opportunity_status_create')
+
+        if OpportunityStatus.objects.filter(name=name).exists():
+            messages.error(request, 'Já existe um status com este nome.')
+            return redirect('prospecta:admin_opportunity_status_create')
+
+        if OpportunityStatus.objects.filter(slug=slug).exists():
+            messages.error(request, 'Já existe um status com este slug.')
+            return redirect('prospecta:admin_opportunity_status_create')
+
+        try:
+            order = int(order)
+        except ValueError:
+            order = 0
+
+        # Criar status
+        OpportunityStatus.objects.create(
+            name=name,
+            slug=slug,
+            color=color,
+            icon=icon,
+            description=description,
+            order=order,
+            is_active=is_active,
+            is_default=is_default,
+            is_closed=is_closed,
+        )
+
+        messages.success(request, f'Status "{name}" criado com sucesso!')
+        return redirect('prospecta:admin_opportunity_status_list')
+
+    # Cores disponíveis para o select
+    color_choices = [
+        ('gray', 'Cinza'),
+        ('blue', 'Azul'),
+        ('green', 'Verde'),
+        ('yellow', 'Amarelo'),
+        ('red', 'Vermelho'),
+        ('purple', 'Roxo'),
+        ('pink', 'Rosa'),
+        ('indigo', 'Índigo'),
+        ('orange', 'Laranja'),
+    ]
+
+    context = {
+        'page_title': 'Criar Status de Oportunidade',
+        'color_choices': color_choices,
+    }
+
+    return render(request, 'prospecta/admin/opportunity_status_form.html', context)
+
+
+@login_required(login_url='account_login')
+@admin_required
+def admin_opportunity_status_edit(request, status_id):
+    """Edita um status de oportunidade existente"""
+    status = get_object_or_404(OpportunityStatus, id=status_id)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        slug = request.POST.get('slug', '').strip()
+        color = request.POST.get('color', 'gray')
+        icon = request.POST.get('icon', '').strip() or None
+        description = request.POST.get('description', '').strip() or None
+        order = request.POST.get('order', 0)
+        is_active = request.POST.get('is_active') == 'on'
+        is_default = request.POST.get('is_default') == 'on'
+        is_closed = request.POST.get('is_closed') == 'on'
+
+        # Gerar slug automaticamente se não fornecido
+        if not slug:
+            slug = slugify(name)
+
+        # Validações
+        if not name:
+            messages.error(request, 'O nome do status é obrigatório.')
+            return redirect('prospecta:admin_opportunity_status_edit', status_id=status_id)
+
+        if OpportunityStatus.objects.filter(name=name).exclude(pk=status.pk).exists():
+            messages.error(request, 'Já existe um status com este nome.')
+            return redirect('prospecta:admin_opportunity_status_edit', status_id=status_id)
+
+        if OpportunityStatus.objects.filter(slug=slug).exclude(pk=status.pk).exists():
+            messages.error(request, 'Já existe um status com este slug.')
+            return redirect('prospecta:admin_opportunity_status_edit', status_id=status_id)
+
+        try:
+            order = int(order)
+        except ValueError:
+            order = 0
+
+        # Atualizar status
+        status.name = name
+        status.slug = slug
+        status.color = color
+        status.icon = icon
+        status.description = description
+        status.order = order
+        status.is_active = is_active
+        status.is_default = is_default
+        status.is_closed = is_closed
+        status.save()
+
+        messages.success(request, f'Status "{name}" atualizado com sucesso!')
+        return redirect('prospecta:admin_opportunity_status_list')
+
+    # Cores disponíveis para o select
+    color_choices = [
+        ('gray', 'Cinza'),
+        ('blue', 'Azul'),
+        ('green', 'Verde'),
+        ('yellow', 'Amarelo'),
+        ('red', 'Vermelho'),
+        ('purple', 'Roxo'),
+        ('pink', 'Rosa'),
+        ('indigo', 'Índigo'),
+        ('orange', 'Laranja'),
+    ]
+
+    context = {
+        'page_title': f'Editar Status - {status.name}',
+        'status': status,
+        'color_choices': color_choices,
+    }
+
+    return render(request, 'prospecta/admin/opportunity_status_form.html', context)
+
+
+@login_required(login_url='account_login')
+@admin_required
+def admin_opportunity_status_delete(request, status_id):
+    """Exclui um status de oportunidade"""
+    status = get_object_or_404(OpportunityStatus, id=status_id)
+
+    if request.method == 'POST':
+        name = status.name
+        status.delete()
+        messages.success(request, f'Status "{name}" excluído com sucesso!')
+        return redirect('prospecta:admin_opportunity_status_list')
+
+    context = {
+        'page_title': f'Excluir Status - {status.name}',
+        'status': status,
+    }
+
+    return render(request, 'prospecta/admin/opportunity_status_delete.html', context)
