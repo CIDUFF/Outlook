@@ -210,6 +210,8 @@ class Opportunity(models.Model):
     title = models.CharField(max_length=255, verbose_name='Título')
     description = models.TextField(
         blank=True, null=True, verbose_name='Descrição')
+    notes = models.TextField(
+        blank=True, null=True, verbose_name='Observações')
     produto = models.CharField(
         max_length=255, blank=True, null=True, verbose_name='Produto')
     client = models.ForeignKey(Client, on_delete=models.CASCADE,

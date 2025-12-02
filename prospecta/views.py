@@ -317,6 +317,7 @@ def opportunity_create(request):
         opportunity = Opportunity(
             title=request.POST['title'],
             description=request.POST.get('description', ''),
+            notes=request.POST.get('notes', ''),
             produto=request.POST.get('produto', ''),
             client_id=request.POST['client'],
             created_by=request.user,
@@ -463,6 +464,7 @@ def opportunity_update(request, pk):
 
         opportunity.title = request.POST['title']
         opportunity.description = request.POST.get('description', '')
+        opportunity.notes = request.POST.get('notes', '')
         opportunity.produto = request.POST.get('produto', '')
         opportunity.client_id = request.POST['client']
         opportunity.responsible_user_id = request.POST['responsible_user']
