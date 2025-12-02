@@ -28,7 +28,7 @@
     <!-- Key Information -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white rounded-lg shadow p-6">
-            <p class="text-gray-600 text-sm">Valor</p>
+            <p class="text-gray-600 text-sm">Valor Principal</p>
             <p class="text-3xl font-bold text-gray-900 mt-2">R$ {{ opportunity.value_brl|floatformat:2|default:"N/A" }}</p>
         </div>
 
@@ -59,6 +59,33 @@
             <p class="text-lg font-semibold text-gray-900 mt-2">{{ opportunity.created_at|date:'d/m/Y' }}</p>
         </div>
     </div>
+
+    <!-- Valores Customizados -->
+    {% if opportunity.custom_values.exists %}
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-dollar-sign mr-2 text-green-600"></i>Valores Adicionais
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-600">Legenda</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-600">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cv in opportunity.custom_values.all %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-4 text-gray-900">{{ cv.label }}</td>
+                        <td class="py-3 px-4 text-right font-semibold text-green-600">R$ {{ cv.value|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Modelo de Venda -->
     {% if opportunity.sales_model %}

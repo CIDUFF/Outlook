@@ -13,7 +13,7 @@ from .models import (
     UserProfile, Client, Contact, SalesModel, Opportunity,
     Stage, Activity, OpportunityHistory, StageHistory, ActivityHistory,
     OpportunityParticipant, Notification, ActivityComment,
-    ActivityAttachment, OpportunityDocument
+    ActivityAttachment, OpportunityDocument, OpportunityCustomValue
 )
 from .utils import get_user_context, permission_required, permissions_required_all
 from .notifications import (
@@ -334,6 +334,22 @@ def opportunity_create(request):
         if partnerships_ids:
             opportunity.partnerships.set(partnerships_ids)
 
+        # Processar valores customizados
+        new_labels = request.POST.getlist('new_value_label[]')
+        new_amounts = request.POST.getlist('new_value_amount[]')
+        
+        for i, (label, amount) in enumerate(zip(new_labels, new_amounts)):
+            if label and amount:
+                try:
+                    OpportunityCustomValue.objects.create(
+                        opportunity=opportunity,
+                        label=label.strip(),
+                        value=amount,
+                        order=i
+                    )
+                except (ValueError, TypeError):
+                    pass
+
         # Processar arquivos anexados
         files = request.FILES.getlist('documents')
         for file in files:
@@ -353,6 +369,11 @@ def opportunity_create(request):
             history_details += f' com parcerias: {partnerships_names}'
         if files:
             history_details += f'. {len(files)} documento(s) anexado(s)'
+        
+        # Adicionar informação sobre valores customizados
+        custom_values_count = opportunity.custom_values.count()
+        if custom_values_count > 0:
+            history_details += f'. {custom_values_count} valor(es) adicional(is) cadastrado(s)'
 
         OpportunityHistory.objects.create(
             opportunity=opportunity,
@@ -456,12 +477,62 @@ def opportunity_update(request, pk):
         partnerships_ids = request.POST.getlist('partnerships')
         opportunity.partnerships.set(partnerships_ids)
 
+        # Processar valores customizados a serem deletados
+        delete_ids = request.POST.getlist('delete_value_id[]')
+        if delete_ids:
+            OpportunityCustomValue.objects.filter(
+                id__in=delete_ids,
+                opportunity=opportunity
+            ).delete()
+
+        # Processar valores customizados existentes (atualizar)
+        existing_ids = request.POST.getlist('existing_value_id[]')
+        existing_labels = request.POST.getlist('existing_value_label[]')
+        existing_amounts = request.POST.getlist('existing_value_amount[]')
+        
+        for value_id, label, amount in zip(existing_ids, existing_labels, existing_amounts):
+            if value_id and label and amount:
+                try:
+                    custom_value = OpportunityCustomValue.objects.get(
+                        id=value_id,
+                        opportunity=opportunity
+                    )
+                    custom_value.label = label.strip()
+                    custom_value.value = amount
+                    custom_value.save()
+                except (OpportunityCustomValue.DoesNotExist, ValueError, TypeError):
+                    pass
+
+        # Processar novos valores customizados
+        new_labels = request.POST.getlist('new_value_label[]')
+        new_amounts = request.POST.getlist('new_value_amount[]')
+        
+        # Calcular próxima ordem
+        max_order = opportunity.custom_values.count()
+        
+        for i, (label, amount) in enumerate(zip(new_labels, new_amounts)):
+            if label and amount:
+                try:
+                    OpportunityCustomValue.objects.create(
+                        opportunity=opportunity,
+                        label=label.strip(),
+                        value=amount,
+                        order=max_order + i
+                    )
+                except (ValueError, TypeError):
+                    pass
+
         # Criar histórico
         partnerships_names = ', '.join(
             [c.name for c in opportunity.partnerships.all()])
         history_details = f'Oportunidade atualizada por {request.user.get_full_name()}'
         if partnerships_names:
             history_details += f' - Parcerias: {partnerships_names}'
+        
+        # Adicionar informação sobre valores customizados
+        custom_values_count = opportunity.custom_values.count()
+        if custom_values_count > 0:
+            history_details += f' - {custom_values_count} valor(es) adicional(is)'
 
         OpportunityHistory.objects.create(
             opportunity=opportunity,

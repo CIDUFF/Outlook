@@ -1,4 +1,5 @@
 from django import template
+from decimal import Decimal
 
 register = template.Library()
 
@@ -72,3 +73,33 @@ def format_currency(value):
         return f'R$ {formatted}'
     except (ValueError, TypeError):
         return 'R$ 0,00'
+
+
+@register.filter
+def sum_values(queryset):
+    """
+    Soma os valores de um queryset de OpportunityCustomValue.
+    Uso: {{ opportunity.custom_values.all|sum_values }}
+    """
+    try:
+        total = Decimal('0')
+        for item in queryset:
+            if hasattr(item, 'value') and item.value:
+                total += Decimal(str(item.value))
+        return total
+    except (ValueError, TypeError):
+        return Decimal('0')
+
+
+@register.filter
+def add_decimal(value1, value2):
+    """
+    Soma dois valores decimais.
+    Uso: {{ value1|add_decimal:value2 }}
+    """
+    try:
+        v1 = Decimal(str(value1)) if value1 else Decimal('0')
+        v2 = Decimal(str(value2)) if value2 else Decimal('0')
+        return v1 + v2
+    except (ValueError, TypeError):
+        return Decimal('0')

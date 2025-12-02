@@ -493,6 +493,31 @@ class PermissionsMatrix(models.Model):
 # DOCUMENTOS E ANEXOS
 # ============================================================================
 
+class OpportunityCustomValue(models.Model):
+    """Valores customizados associados a uma oportunidade"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False, verbose_name='ID')
+    opportunity = models.ForeignKey(
+        Opportunity, on_delete=models.CASCADE, related_name='custom_values', verbose_name='Oportunidade')
+    label = models.CharField(max_length=255, verbose_name='Legenda')
+    value = models.DecimalField(
+        max_digits=15, decimal_places=2, verbose_name='Valor (R$)')
+    order = models.IntegerField(default=0, verbose_name='Ordem')
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Criado em')
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name='Atualizado em')
+
+    class Meta:
+        db_table = 'tab_opportunity_custom_values'
+        verbose_name = 'Valor Customizado da Oportunidade'
+        verbose_name_plural = 'Valores Customizados das Oportunidades'
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"{self.opportunity.title} - {self.label}: R$ {self.value}"
+
+
 class OpportunityDocument(models.Model):
     """Documentos anexados às oportunidades"""
     DOCUMENT_TYPE_CHOICES = [
