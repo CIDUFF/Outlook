@@ -1,0 +1,129 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Notificações - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Notificações</h1>
+                {% if unread_count > 0 %}
+                <p class="text-gray-600">{{ unread_count }} notificação{{ unread_count|pluralize:"ões" }} não lida{{ unread_count|pluralize:"s" }}</p>
+                {% else %}
+                <p class="text-gray-600">Todas as notificações foram lidas</p>
+                {% endif %}
+            </div>
+            {% if unread_count > 0 %}
+            <form method="post" action="{% url 'prospecta:notifications_mark_all_read' %}">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                    <i class="fas fa-check-double mr-2"></i>Marcar todas como lidas
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Filtros -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div class="flex gap-2">
+                <a href="?status=all" 
+                   class="px-4 py-2 rounded-lg text-sm font-medium {% if filter_status == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Todas
+                </a>
+                <a href="?status=unread" 
+                   class="px-4 py-2 rounded-lg text-sm font-medium {% if filter_status == 'unread' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Não lidas
+                </a>
+                <a href="?status=read" 
+                   class="px-4 py-2 rounded-lg text-sm font-medium {% if filter_status == 'read' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Lidas
+                </a>
+            </div>
+        </div>
+
+        <!-- Lista de Notificações -->
+        <div class="space-y-3">
+            {% for notification in notifications %}
+            <div class="bg-white rounded-lg shadow-sm p-4 {% if not notification.is_read %}border-l-4 border-blue-500{% endif %}">
+                <div class="flex items-start gap-4">
+                    <!-- Ícone por tipo -->
+                    <div class="flex-shrink-0">
+                        {% if notification.notification_type == 'activity_assigned' %}
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-plus text-blue-600"></i>
+                        </div>
+                        {% elif notification.notification_type == 'activity_submitted' %}
+                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                        {% elif notification.notification_type == 'activity_approved' %}
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                        </div>
+                        {% elif notification.notification_type == 'activity_rejected' %}
+                        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-times-circle text-red-600"></i>
+                        </div>
+                        {% elif notification.notification_type == 'activity_comment' %}
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-comment text-purple-600"></i>
+                        </div>
+                        {% else %}
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bell text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Conteúdo -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-sm font-semibold text-gray-900 {% if not notification.is_read %}font-bold{% endif %}">
+                                {{ notification.title }}
+                            </h3>
+                            <span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+                                {{ notification.created_at|timesince }} atrás
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ notification.message|truncatewords:30 }}</p>
+                        
+                        {% if notification.sender %}
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-user mr-1"></i>{{ notification.sender.get_full_name }}
+                        </p>
+                        {% endif %}
+                        
+                        {% if notification.action_url and not notification.is_read %}
+                        <form method="post" action="{% url 'prospecta:notification_mark_read' notification.pk %}" class="mt-2">
+                            {% csrf_token %}
+                            <button type="submit" class="text-sm text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-external-link-alt mr-1"></i>Ver detalhes
+                            </button>
+                        </form>
+                        {% elif notification.action_url %}
+                        <a href="{{ notification.action_url }}" class="text-sm text-blue-600 hover:text-blue-800 mt-2 inline-block">
+                            <i class="fas fa-external-link-alt mr-1"></i>Ver detalhes
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Status de leitura -->
+                    {% if not notification.is_read %}
+                    <div class="flex-shrink-0">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full inline-block"></span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                <i class="fas fa-bell-slash text-gray-300 text-5xl mb-4"></i>
+                <p class="text-gray-500">Nenhuma notificação encontrada.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

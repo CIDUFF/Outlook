@@ -1,0 +1,69 @@
+<!-- Dropdown de Notificações (HTMX partial) -->
+<div class="notifications-dropdown bg-white rounded-lg shadow-xl border border-gray-200 w-80 max-h-96 overflow-hidden">
+    <div class="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+        <span class="font-semibold text-gray-800">Notificações</span>
+        {% if notifications %}
+        <a href="{% url 'prospecta:notifications_list' %}" class="text-sm text-blue-600 hover:text-blue-800">
+            Ver todas
+        </a>
+        {% endif %}
+    </div>
+    
+    <div class="overflow-y-auto max-h-80">
+        {% for notification in notifications %}
+        <a href="{% url 'prospecta:notification_mark_read' notification.pk %}" 
+           class="block p-3 hover:bg-gray-50 border-b border-gray-50 {% if not notification.is_read %}bg-blue-50{% endif %}">
+            <div class="flex items-start gap-3">
+                <!-- Ícone -->
+                <div class="flex-shrink-0 mt-1">
+                    {% if notification.notification_type == 'activity_assigned' %}
+                    <i class="fas fa-user-plus text-blue-500 text-sm"></i>
+                    {% elif notification.notification_type == 'activity_submitted' %}
+                    <i class="fas fa-clock text-yellow-500 text-sm"></i>
+                    {% elif notification.notification_type == 'activity_approved' %}
+                    <i class="fas fa-check-circle text-green-500 text-sm"></i>
+                    {% elif notification.notification_type == 'activity_rejected' %}
+                    <i class="fas fa-times-circle text-red-500 text-sm"></i>
+                    {% elif notification.notification_type == 'activity_comment' %}
+                    <i class="fas fa-comment text-purple-500 text-sm"></i>
+                    {% else %}
+                    <i class="fas fa-bell text-gray-400 text-sm"></i>
+                    {% endif %}
+                </div>
+                
+                <!-- Conteúdo -->
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm {% if not notification.is_read %}font-semibold text-gray-900{% else %}text-gray-700{% endif %} truncate">
+                        {{ notification.title }}
+                    </p>
+                    <p class="text-xs text-gray-500 truncate">{{ notification.message|truncatewords:10 }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ notification.created_at|timesince }} atrás</p>
+                </div>
+                
+                <!-- Indicador não lido -->
+                {% if not notification.is_read %}
+                <div class="flex-shrink-0">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full inline-block"></span>
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% empty %}
+        <div class="p-6 text-center">
+            <i class="fas fa-bell-slash text-gray-300 text-3xl mb-2"></i>
+            <p class="text-sm text-gray-500">Nenhuma notificação</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if unread_count > 5 %}
+    <div class="p-2 border-t border-gray-100 bg-gray-50 text-center">
+        <form method="post" action="{% url 'prospecta:notifications_mark_all_read' %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="text-xs text-blue-600 hover:text-blue-800">
+                Marcar todas como lidas
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>

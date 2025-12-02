@@ -1,0 +1,195 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}Verificar Atividade - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="mb-6">
+            <a href="{% url 'prospecta:opportunity_detail' activity.stage.opportunity.pk %}" 
+               class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-left mr-2"></i>Voltar para Oportunidade
+            </a>
+        </div>
+
+        <h1 class="text-3xl font-bold mb-2 text-gray-800">Verificar Atividade</h1>
+        <p class="text-gray-600 mb-6">Revise a atividade e decida se aprova ou reprova.</p>
+
+        <!-- Detalhes da Atividade -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">{{ activity.title }}</h2>
+                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 mt-2">
+                        <i class="fas fa-clock mr-1"></i>Aguardando Verificação
+                    </span>
+                </div>
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                    {{ activity.get_activity_type_display }}
+                </span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                <div>
+                    <p><strong>Oportunidade:</strong> {{ activity.stage.opportunity.title }}</p>
+                    <p><strong>Etapa:</strong> {{ activity.stage.name }}</p>
+                </div>
+                <div>
+                    <p><strong>Submetido por:</strong> {{ activity.previous_assigned_to.get_full_name }}</p>
+                    <p><strong>Data de submissão:</strong> {{ activity.submission_date|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+
+            {% if activity.description %}
+            <div class="border-t border-gray-200 pt-4 mt-4">
+                <h4 class="font-semibold text-gray-700 mb-2">Descrição Original</h4>
+                <p class="text-gray-600 text-sm">{{ activity.description }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Notas de Conclusão -->
+        <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <h3 class="font-semibold text-green-800 mb-3">
+                <i class="fas fa-clipboard-check mr-2"></i>Notas de Conclusão
+            </h3>
+            <div class="text-green-700 whitespace-pre-wrap">{{ activity.completion_notes }}</div>
+        </div>
+
+        <!-- Histórico de Comentários -->
+        {% if comments %}
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="font-semibold text-gray-800 mb-4">
+                <i class="fas fa-comments mr-2"></i>Histórico de Comunicação
+            </h3>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+                {% for comment in comments %}
+                <div class="{% if comment.is_system_message %}bg-gray-50{% elif comment.author == user %}bg-blue-50{% else %}bg-white border{% endif %} rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center">
+                            {% if comment.is_system_message %}
+                            <i class="fas fa-robot text-gray-500 mr-2"></i>
+                            <span class="font-medium text-gray-600">Sistema</span>
+                            {% else %}
+                            <i class="fas fa-user-circle text-gray-400 mr-2"></i>
+                            <span class="font-medium text-gray-700">{{ comment.author.get_full_name }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="text-xs text-gray-500">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="text-sm text-gray-600 whitespace-pre-wrap">{{ comment.content }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulário de Verificação -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="font-semibold text-gray-800 mb-4">
+                <i class="fas fa-gavel mr-2"></i>Decisão
+            </h3>
+            
+            <form method="post" id="verificationForm" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Motivo de reprovação - inicialmente oculto -->
+                <div id="rejectionContainer" style="display: none;">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-exclamation-circle mr-1 text-red-600"></i>
+                        Motivo da Reprovação *
+                    </label>
+                    <textarea name="rejection_reason" rows="4" id="rejectionReason"
+                              placeholder="Explique o motivo da reprovação e o que precisa ser corrigido..."
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
+                    <!-- Aprovar - sempre visível -->
+                    <button type="submit" name="action" value="aprovar" 
+                            class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium">
+                        <i class="fas fa-check mr-2"></i>Aprovar Atividade
+                    </button>
+                    
+                    <!-- Reprovar - visível inicialmente -->
+                    <button type="button" id="btnShowReject"
+                            class="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                        <i class="fas fa-times mr-2"></i>Reprovar Atividade
+                    </button>
+                    
+                    <!-- Confirmar Reprovação - oculto inicialmente -->
+                    <button type="submit" name="action" value="reprovar" id="btnConfirmReject"
+                            style="display: none;"
+                            class="flex-1 px-6 py-3 bg-red-700 text-white rounded-lg hover:bg-red-800 transition font-medium">
+                        <i class="fas fa-times mr-2"></i>Confirmar Reprovação
+                    </button>
+                    
+                    <!-- Cancelar - oculto inicialmente -->
+                    <button type="button" id="btnCancelReject"
+                            style="display: none;"
+                            class="px-6 py-3 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">
+                        <i class="fas fa-undo mr-2"></i>Cancelar
+                    </button>
+                    
+                    <a href="{% url 'prospecta:opportunity_detail' activity.stage.opportunity.pk %}" 
+                       class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-center">
+                        <i class="fas fa-arrow-left mr-2"></i>Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <script>
+        (function() {
+            const btnShowReject = document.getElementById('btnShowReject');
+            const btnConfirmReject = document.getElementById('btnConfirmReject');
+            const btnCancelReject = document.getElementById('btnCancelReject');
+            const rejectionContainer = document.getElementById('rejectionContainer');
+            const rejectionReason = document.getElementById('rejectionReason');
+            
+            btnShowReject.addEventListener('click', function() {
+                rejectionContainer.style.display = 'block';
+                btnShowReject.style.display = 'none';
+                btnConfirmReject.style.cssText = 'display: flex !important; background-color: #b91c1c; color: white;';
+                btnCancelReject.style.cssText = 'display: flex !important; background-color: #9ca3af; color: white;';
+                rejectionReason.focus();
+            });
+            
+            btnCancelReject.addEventListener('click', function() {
+                rejectionContainer.style.display = 'none';
+                btnShowReject.style.display = 'flex';
+                btnConfirmReject.style.display = 'none';
+                btnCancelReject.style.display = 'none';
+                rejectionReason.value = '';
+            });
+            
+            document.getElementById('verificationForm').addEventListener('submit', function(e) {
+                if (e.submitter && e.submitter.value === 'reprovar' && !rejectionReason.value.trim()) {
+                    e.preventDefault();
+                    alert('Por favor, informe o motivo da reprovação.');
+                    rejectionReason.focus();
+                }
+            });
+        })();
+        </script>
+
+        <!-- Adicionar Comentário -->
+        <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+            <h3 class="font-semibold text-gray-800 mb-4">
+                <i class="fas fa-comment mr-2"></i>Adicionar Comentário
+            </h3>
+            <form method="post" action="{% url 'prospecta:activity_add_comment' activity.pk %}" class="space-y-4">
+                {% csrf_token %}
+                <textarea name="content" rows="3" required
+                          placeholder="Escreva um comentário ou feedback..."
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-paper-plane mr-2"></i>Enviar Comentário
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

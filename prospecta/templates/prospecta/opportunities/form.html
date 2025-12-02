@@ -9,7 +9,7 @@
     </h1>
 
     <div class="bg-white rounded-lg shadow p-8">
-        <form method="post" class="space-y-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -181,6 +181,36 @@
                     <option value="{{ value }}" {% if opportunity.status == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
+            </div>
+            {% else %}
+            <!-- Upload de documentos - apenas na criação -->
+            <div x-data="{ files: [] }">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-paperclip mr-2 text-blue-600"></i>Documentos (opcional)
+                </label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition">
+                    <input type="file" name="documents" multiple 
+                           @change="files = Array.from($event.target.files)"
+                           class="hidden" id="documents-input">
+                    <label for="documents-input" class="cursor-pointer">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                        <p class="text-sm text-gray-600">Clique para selecionar arquivos ou arraste aqui</p>
+                        <p class="text-xs text-gray-400 mt-1">Tamanho maximo: 500MB por arquivo</p>
+                    </label>
+                </div>
+                <!-- Lista de arquivos selecionados -->
+                <template x-if="files.length > 0">
+                    <div class="mt-3 space-y-2">
+                        <p class="text-sm font-medium text-gray-700">Arquivos selecionados:</p>
+                        <template x-for="file in files" :key="file.name">
+                            <div class="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded px-3 py-2">
+                                <i class="fas fa-file text-blue-500"></i>
+                                <span x-text="file.name"></span>
+                                <span class="text-gray-400" x-text="'(' + (file.size / 1024 / 1024).toFixed(2) + ' MB)'"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
             {% endif %}
 

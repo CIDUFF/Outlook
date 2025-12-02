@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q, Sum, Count
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -12,9 +12,16 @@ from django.contrib import messages
 from .models import (
     UserProfile, Client, Contact, SalesModel, Opportunity,
     Stage, Activity, OpportunityHistory, StageHistory, ActivityHistory,
-    OpportunityParticipant
+    OpportunityParticipant, Notification, ActivityComment,
+    ActivityAttachment, OpportunityDocument
 )
 from .utils import get_user_context, permission_required, permissions_required_all
+from .notifications import (
+    notify_activity_assigned, notify_activity_reassigned,
+    notify_activity_submitted_for_verification, notify_activity_approved,
+    notify_activity_rejected, notify_activity_comment,
+    get_unread_notifications_count, get_recent_notifications, mark_all_as_read
+)
 
 
 # ============================================================================
@@ -327,12 +334,25 @@ def opportunity_create(request):
         if partnerships_ids:
             opportunity.partnerships.set(partnerships_ids)
 
+        # Processar arquivos anexados
+        files = request.FILES.getlist('documents')
+        for file in files:
+            OpportunityDocument.objects.create(
+                opportunity=opportunity,
+                title=file.name,
+                document_type='outro',
+                file=file,
+                uploaded_by=request.user,
+            )
+
         # Criar histórico
         partnerships_names = ', '.join(
             [c.name for c in opportunity.partnerships.all()])
         history_details = f'Oportunidade criada por {request.user.get_full_name()}'
         if partnerships_names:
             history_details += f' com parcerias: {partnerships_names}'
+        if files:
+            history_details += f'. {len(files)} documento(s) anexado(s)'
 
         OpportunityHistory.objects.create(
             opportunity=opportunity,
@@ -836,24 +856,86 @@ def stage_delete(request, pk):
 # ============================================================================
 
 @login_required(login_url='account_login')
-@role_required('admin', 'gerente')
-def activity_create(request, stage_pk):
-    """Criar nova atividade em uma etapa"""
-    stage = get_object_or_404(Stage, pk=stage_pk)
+def activity_detail(request, pk):
+    """Página de detalhes de uma atividade com histórico e comentários"""
+    activity = get_object_or_404(Activity, pk=pk)
     context = get_user_context(request.user)
 
+    # Verificar se o usuário tem permissão para ver
+    allowed = (
+        activity.assigned_to == request.user or
+        activity.verifier == request.user or
+        activity.delegated_by == request.user or
+        context.get('is_admin') or
+        context.get('is_manager')
+    )
+
+    if not allowed:
+        messages.error(
+            request, 'Você não tem permissão para ver esta atividade.')
+        return redirect('prospecta:activities_list')
+
+    # Obter comentários e histórico
+    comments = activity.comments.all().order_by('created_at')
+    history = ActivityHistory.objects.filter(
+        activity=activity).order_by('-changed_at')[:20]
+
+    context.update({
+        'activity': activity,
+        'comments': comments,
+        'history': history,
+        'can_submit': activity.assigned_to == request.user and activity.can_be_submitted_for_verification(),
+        'can_verify': (activity.verifier == request.user or context.get('is_admin')) and activity.can_be_verified(),
+        'can_comment': allowed,
+    })
+    return render(request, 'prospecta/activities/detail.html', context)
+
+
+@login_required(login_url='account_login')
+@role_required('admin', 'gerente', 'analista')
+def activity_create_standalone(request):
+    """Criar nova atividade standalone (escolhendo oportunidade/etapa)"""
+    context = get_user_context(request.user)
+
+    # Obter oportunidades com suas etapas
+    if context.get('is_admin') or context.get('is_manager'):
+        opportunities = Opportunity.objects.filter(
+            status__in=['aberta', 'em_andamento']
+        ).select_related('client', 'responsible_user').prefetch_related('stages')
+    else:
+        opportunities = Opportunity.objects.filter(
+            status__in=['aberta', 'em_andamento'],
+            responsible_user=request.user
+        ).select_related('client', 'responsible_user').prefetch_related('stages')
+
     if request.method == 'POST':
+        stage_id = request.POST.get('stage')
+        if not stage_id:
+            messages.error(request, 'Selecione uma etapa para a atividade.')
+            context.update({
+                'opportunities': opportunities,
+                'users': User.objects.filter(profile__is_active=True),
+                'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
+            })
+            return render(request, 'prospecta/activities/form_standalone.html', context)
+
+        stage = get_object_or_404(Stage, pk=stage_id)
+        assigned_to_id = request.POST.get('assigned_to') or None
+
         activity = Activity(
             stage=stage,
             title=request.POST['title'],
             description=request.POST.get('description', ''),
-            assigned_to_id=request.POST.get('assigned_to') or None,
+            assigned_to_id=assigned_to_id,
             delegated_by=request.user,
+            activity_type=request.POST.get('activity_type', 'tarefa'),
             start_date=request.POST.get('start_date') or None,
             expected_date=request.POST.get('expected_date') or None,
+            assigned_at=timezone.now() if assigned_to_id else None,
         )
         activity.save()
 
+        # Criar histórico de criação
         ActivityHistory.objects.create(
             activity=activity,
             changed_by=request.user,
@@ -861,12 +943,76 @@ def activity_create(request, stage_pk):
             change_details=f'Atividade criada por {request.user.get_full_name()}'
         )
 
+        # Se foi atribuída, criar histórico específico de atribuição e notificar
+        if assigned_to_id and activity.assigned_to:
+            ActivityHistory.objects.create(
+                activity=activity,
+                changed_by=request.user,
+                change_type='atribuicao',
+                change_details=f'Atividade atribuída para {activity.assigned_to.get_full_name()} por {request.user.get_full_name()}'
+            )
+            notify_activity_assigned(activity, request.user)
+
+        messages.success(request, 'Atividade criada com sucesso!')
+        return redirect('prospecta:activities_list')
+
+    context.update({
+        'opportunities': opportunities,
+        'users': User.objects.filter(profile__is_active=True),
+        'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
+    })
+    return render(request, 'prospecta/activities/form_standalone.html', context)
+
+
+@login_required(login_url='account_login')
+@role_required('admin', 'gerente')
+def activity_create(request, stage_pk):
+    """Criar nova atividade em uma etapa"""
+    stage = get_object_or_404(Stage, pk=stage_pk)
+    context = get_user_context(request.user)
+
+    if request.method == 'POST':
+        assigned_to_id = request.POST.get('assigned_to') or None
+
+        activity = Activity(
+            stage=stage,
+            title=request.POST['title'],
+            description=request.POST.get('description', ''),
+            assigned_to_id=assigned_to_id,
+            delegated_by=request.user,
+            activity_type=request.POST.get('activity_type', 'tarefa'),
+            start_date=request.POST.get('start_date') or None,
+            expected_date=request.POST.get('expected_date') or None,
+            assigned_at=timezone.now() if assigned_to_id else None,
+        )
+        activity.save()
+
+        # Criar histórico de criação
+        ActivityHistory.objects.create(
+            activity=activity,
+            changed_by=request.user,
+            change_type='criacao',
+            change_details=f'Atividade criada por {request.user.get_full_name()}'
+        )
+
+        # Se foi atribuída, criar histórico específico de atribuição e notificar
+        if assigned_to_id and activity.assigned_to:
+            ActivityHistory.objects.create(
+                activity=activity,
+                changed_by=request.user,
+                change_type='atribuicao',
+                change_details=f'Atividade atribuída para {activity.assigned_to.get_full_name()} por {request.user.get_full_name()}'
+            )
+            # Notificar o usuário atribuído
+            notify_activity_assigned(activity, request.user)
+
         messages.success(request, 'Atividade criada com sucesso!')
         return redirect('prospecta:opportunity_detail', pk=stage.opportunity.pk)
 
     context.update({
         'stage': stage,
         'users': User.objects.filter(profile__is_active=True),
+        'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
     })
     return render(request, 'prospecta/activities/form.html', context)
 
@@ -876,14 +1022,54 @@ def activity_create(request, stage_pk):
 def activity_update(request, pk):
     """Editar atividade"""
     activity = get_object_or_404(Activity, pk=pk)
+    old_assigned_to = activity.assigned_to
 
     if request.method == 'POST':
+        new_assigned_to_id = request.POST.get('assigned_to') or None
+
         activity.title = request.POST['title']
         activity.description = request.POST.get('description', '')
-        activity.assigned_to_id = request.POST.get('assigned_to') or None
+        activity.activity_type = request.POST.get(
+            'activity_type', activity.activity_type)
         activity.start_date = request.POST.get('start_date') or None
         activity.expected_date = request.POST.get('expected_date') or None
         activity.status = request.POST.get('status', activity.status)
+
+        # Verificar se houve mudança de atribuição
+        old_assigned_to_id = old_assigned_to.id if old_assigned_to else None
+        new_assigned_to_id_int = int(
+            new_assigned_to_id) if new_assigned_to_id else None
+
+        if old_assigned_to_id != new_assigned_to_id_int:
+            activity.assigned_to_id = new_assigned_to_id
+            activity.assigned_at = timezone.now() if new_assigned_to_id else None
+
+            # Buscar novo usuário
+            new_assigned_to = None
+            if new_assigned_to_id:
+                try:
+                    new_assigned_to = User.objects.get(id=new_assigned_to_id)
+                except User.DoesNotExist:
+                    pass
+
+            # Criar histórico de reatribuição
+            if old_assigned_to or new_assigned_to:
+                old_name = old_assigned_to.get_full_name() if old_assigned_to else 'Ninguém'
+                new_name = new_assigned_to.get_full_name() if new_assigned_to else 'Ninguém'
+
+                ActivityHistory.objects.create(
+                    activity=activity,
+                    changed_by=request.user,
+                    change_type='reatribuicao',
+                    change_details=f'Atividade reatribuída de {old_name} para {new_name} por {request.user.get_full_name()}'
+                )
+
+                # Notificar sobre reatribuição
+                notify_activity_reassigned(
+                    activity, old_assigned_to, new_assigned_to, request.user)
+        else:
+            activity.assigned_to_id = new_assigned_to_id
+
         activity.save()
 
         ActivityHistory.objects.create(
@@ -901,6 +1087,7 @@ def activity_update(request, pk):
         'activity': activity,
         'users': User.objects.filter(profile__is_active=True),
         'status_choices': Activity.STATUS_CHOICES,
+        'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
     })
     return render(request, 'prospecta/activities/form.html', context)
 
@@ -920,6 +1107,352 @@ def activity_delete(request, pk):
     context = get_user_context(request.user)
     context['activity'] = activity
     return render(request, 'prospecta/activities/confirm_delete.html', context)
+
+
+# ============================================================================
+# FLUXO DE SUBMISSÃO E VERIFICAÇÃO DE ATIVIDADES
+# ============================================================================
+
+@login_required(login_url='account_login')
+def activity_submit_completion(request, pk):
+    """
+    Submeter atividade para verificação.
+    O responsável deve adicionar notas de conclusão e selecionar um verificador.
+    """
+    activity = get_object_or_404(Activity, pk=pk)
+
+    # Verificar se o usuário é o responsável pela atividade
+    if activity.assigned_to != request.user:
+        messages.error(
+            request, 'Apenas o responsável pode submeter a atividade para verificação.')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    # Verificar se a atividade pode ser submetida
+    if not activity.can_be_submitted_for_verification():
+        messages.error(
+            request, 'Esta atividade não pode ser submetida para verificação no momento.')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    context = get_user_context(request.user)
+
+    if request.method == 'POST':
+        completion_notes = request.POST.get('completion_notes', '').strip()
+        verifier_id = request.POST.get('verifier')
+
+        # Validar campos obrigatórios
+        if not completion_notes:
+            messages.error(request, 'As notas de conclusão são obrigatórias.')
+            context.update({
+                'activity': activity,
+                'users': User.objects.filter(profile__is_active=True).exclude(id=request.user.id),
+            })
+            return render(request, 'prospecta/activities/submit_completion.html', context)
+
+        if not verifier_id:
+            messages.error(request, 'Você deve selecionar um verificador.')
+            context.update({
+                'activity': activity,
+                'users': User.objects.filter(profile__is_active=True).exclude(id=request.user.id),
+            })
+            return render(request, 'prospecta/activities/submit_completion.html', context)
+
+        try:
+            verifier = User.objects.get(id=verifier_id)
+        except User.DoesNotExist:
+            messages.error(request, 'Verificador não encontrado.')
+            return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+        # Atualizar atividade
+        activity.completion_notes = completion_notes
+        activity.verifier = verifier
+        activity.previous_assigned_to = request.user
+        activity.assigned_to = verifier  # Transferir responsabilidade para o verificador
+        activity.submission_date = timezone.now()
+        activity.status = 'aguardando_verificacao'
+        activity.approval_status = 'submetida'
+        activity.save()
+
+        # Criar histórico
+        ActivityHistory.objects.create(
+            activity=activity,
+            changed_by=request.user,
+            change_type='submissao',
+            change_details=f'Atividade submetida para verificação de {verifier.get_full_name()} por {request.user.get_full_name()}'
+        )
+
+        # Criar comentário do sistema
+        ActivityComment.objects.create(
+            activity=activity,
+            author=request.user,
+            content=f"Atividade submetida para verificação.\n\n**Notas de conclusão:**\n{completion_notes}",
+            is_system_message=True,
+        )
+
+        # Notificar o verificador
+        notify_activity_submitted_for_verification(activity, request.user)
+
+        messages.success(
+            request, f'Atividade submetida para verificação de {verifier.get_full_name()}!')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    # GET - exibir formulário
+    # Obter usuários que podem verificar (gerentes e admins, exceto o próprio usuário)
+    verifiers = User.objects.filter(
+        profile__is_active=True,
+        profile__role__in=['admin', 'gerente']
+    ).exclude(id=request.user.id)
+
+    # Sugerir quem delegou como verificador padrão
+    suggested_verifier = activity.delegated_by if activity.delegated_by and activity.delegated_by != request.user else None
+
+    context.update({
+        'activity': activity,
+        'users': verifiers,
+        'suggested_verifier': suggested_verifier,
+    })
+    return render(request, 'prospecta/activities/submit_completion.html', context)
+
+
+@login_required(login_url='account_login')
+@role_required('admin', 'gerente')
+def activity_verify(request, pk):
+    """
+    Verificar/aprovar/reprovar uma atividade submetida.
+    Apenas o verificador designado ou admins podem fazer isso.
+    """
+    activity = get_object_or_404(Activity, pk=pk)
+
+    # Verificar permissão
+    is_admin = request.user.profile.is_admin() if hasattr(
+        request.user, 'profile') else False
+    if activity.verifier != request.user and not is_admin:
+        messages.error(
+            request, 'Você não tem permissão para verificar esta atividade.')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    # Verificar se a atividade está aguardando verificação
+    if not activity.can_be_verified():
+        messages.error(
+            request, 'Esta atividade não está aguardando verificação.')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    context = get_user_context(request.user)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'aprovar':
+            # Aprovar a atividade
+            activity.approved = True
+            activity.approval_date = timezone.now()
+            activity.approved_by = request.user
+            activity.status = 'concluida'
+            activity.approval_status = 'aprovada'
+            activity.end_date = timezone.now().date()
+            activity.save()
+
+            # Criar histórico
+            ActivityHistory.objects.create(
+                activity=activity,
+                changed_by=request.user,
+                change_type='aprovacao',
+                change_details=f'Atividade aprovada por {request.user.get_full_name()}'
+            )
+
+            # Criar comentário do sistema
+            ActivityComment.objects.create(
+                activity=activity,
+                author=request.user,
+                content="Atividade aprovada.",
+                is_system_message=True,
+            )
+
+            # Notificar o responsável anterior
+            notify_activity_approved(activity, request.user)
+
+            messages.success(request, 'Atividade aprovada com sucesso!')
+
+        elif action == 'reprovar':
+            rejection_reason = request.POST.get('rejection_reason', '').strip()
+
+            if not rejection_reason:
+                messages.error(
+                    request, 'O motivo da reprovação é obrigatório.')
+                context.update({
+                    'activity': activity,
+                    'comments': activity.comments.all().order_by('created_at'),
+                })
+                return render(request, 'prospecta/activities/verify.html', context)
+
+            # Guardar o responsável anterior para notificação
+            original_assignee = activity.previous_assigned_to
+
+            # Reprovar e devolver para o responsável anterior
+            activity.rejection_reason = rejection_reason
+            activity.assigned_to = original_assignee
+            activity.previous_assigned_to = request.user  # Guardar quem reprovou
+            activity.status = 'em_andamento'
+            activity.approval_status = 'reprovada'
+            activity.approved = False
+            activity.approval_date = None
+            activity.approved_by = None
+            activity.submission_date = None
+            activity.assigned_at = timezone.now()
+            activity.save()
+
+            # Criar histórico
+            ActivityHistory.objects.create(
+                activity=activity,
+                changed_by=request.user,
+                change_type='reprovacao',
+                change_details=f'Atividade reprovada por {request.user.get_full_name()}. Motivo: {rejection_reason}'
+            )
+
+            # Criar comentário do sistema
+            ActivityComment.objects.create(
+                activity=activity,
+                author=request.user,
+                content=f"Atividade reprovada.\n\n**Motivo:**\n{rejection_reason}",
+                is_system_message=True,
+            )
+
+            # Notificar o responsável original
+            if original_assignee:
+                activity.previous_assigned_to = original_assignee  # Restaurar para notificação
+                notify_activity_rejected(
+                    activity, request.user, rejection_reason)
+
+            messages.warning(
+                request, 'Atividade reprovada e devolvida para correções.')
+
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    # GET - exibir formulário de verificação
+    context.update({
+        'activity': activity,
+        'comments': activity.comments.all().order_by('created_at'),
+    })
+    return render(request, 'prospecta/activities/verify.html', context)
+
+
+@login_required(login_url='account_login')
+@require_http_methods(["POST"])
+def activity_add_comment(request, pk):
+    """Adicionar comentário a uma atividade"""
+    activity = get_object_or_404(Activity, pk=pk)
+
+    # Verificar se o usuário tem permissão (responsável, verificador ou delegador)
+    allowed = (
+        activity.assigned_to == request.user or
+        activity.verifier == request.user or
+        activity.delegated_by == request.user or
+        request.user.profile.is_manager()
+    )
+
+    if not allowed:
+        messages.error(
+            request, 'Você não tem permissão para comentar nesta atividade.')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    content = request.POST.get('content', '').strip()
+
+    if not content:
+        messages.error(request, 'O comentário não pode estar vazio.')
+        return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+    # Criar comentário
+    comment = ActivityComment.objects.create(
+        activity=activity,
+        author=request.user,
+        content=content,
+    )
+
+    # Notificar outros envolvidos
+    notify_activity_comment(comment)
+
+    messages.success(request, 'Comentário adicionado!')
+
+    # Redirecionar de volta para a página anterior
+    referer = request.META.get('HTTP_REFERER', '')
+    if 'verificar' in referer:
+        return redirect('prospecta:activity_verify', pk=activity.pk)
+    elif 'atividades' in referer and str(activity.pk) in referer:
+        return redirect('prospecta:activity_detail', pk=activity.pk)
+    return redirect('prospecta:opportunity_detail', pk=activity.stage.opportunity.pk)
+
+
+# ============================================================================
+# NOTIFICAÇÕES
+# ============================================================================
+
+@login_required(login_url='account_login')
+def notifications_list(request):
+    """Lista de notificações do usuário"""
+    context = get_user_context(request.user)
+
+    notifications = Notification.objects.filter(
+        recipient=request.user
+    ).order_by('-created_at')
+
+    # Filtro por status
+    filter_status = request.GET.get('status', 'all')
+    if filter_status == 'unread':
+        notifications = notifications.filter(is_read=False)
+    elif filter_status == 'read':
+        notifications = notifications.filter(is_read=True)
+
+    context.update({
+        'notifications': notifications[:50],
+        'unread_count': notifications.filter(is_read=False).count(),
+        'filter_status': filter_status,
+    })
+    return render(request, 'prospecta/notifications/list.html', context)
+
+
+@login_required(login_url='account_login')
+def notification_mark_read(request, pk):
+    """Marcar uma notificação como lida e redirecionar"""
+    notification = get_object_or_404(
+        Notification, pk=pk, recipient=request.user)
+    notification.mark_as_read()
+
+    # Se há URL de ação, redirecionar
+    if notification.action_url:
+        return redirect(notification.action_url)
+
+    return redirect('prospecta:notifications_list')
+
+
+@login_required(login_url='account_login')
+@require_http_methods(["POST"])
+def notifications_mark_all_read(request):
+    """Marcar todas as notificações como lidas"""
+    mark_all_as_read(request.user)
+    messages.success(
+        request, 'Todas as notificações foram marcadas como lidas.')
+    return redirect('prospecta:notifications_list')
+
+
+@login_required(login_url='account_login')
+def notifications_dropdown(request):
+    """HTMX endpoint para dropdown de notificações"""
+    notifications = get_recent_notifications(request.user, limit=5)
+    unread_count = get_unread_notifications_count(request.user)
+
+    return render(request, 'prospecta/components/notifications_dropdown.html', {
+        'notifications': notifications,
+        'unread_count': unread_count,
+    })
+
+
+@login_required(login_url='account_login')
+def notifications_count(request):
+    """API endpoint para contagem de notificações não lidas - retorna ícone do sino"""
+    count = get_unread_notifications_count(request.user)
+    if count > 0:
+        return HttpResponse('<i class="fas fa-bell text-xl text-red-500 animate-wiggle"></i>')
+    else:
+        return HttpResponse('<i class="fas fa-bell text-xl"></i>')
 
 
 # ============================================================================

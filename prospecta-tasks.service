@@ -1,0 +1,20 @@
+[Unit]
+Description=PROSPECTA Background Tasks Worker
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=marcus
+Group=marcus
+WorkingDirectory=/home/marcus/desenvolvimento/Outlook
+Environment="PATH=/home/marcus/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/marcus/.local/bin/uv run manage.py process_tasks
+Restart=always
+RestartSec=10
+
+# Logs
+StandardOutput=append:/home/marcus/desenvolvimento/Outlook/logs/background_tasks.log
+StandardError=append:/home/marcus/desenvolvimento/Outlook/logs/background_tasks_error.log
+
+[Install]
+WantedBy=multi-user.target

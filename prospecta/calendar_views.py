@@ -1,17 +1,29 @@
 """
 Views para gerenciamento de calendário, reuniões e documentos
 """
+import os
+import mimetypes
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, Http404
+from django.conf import settings
 from datetime import datetime
 
 from .models import (
     Opportunity, Activity, Meeting, OpportunityDocument,
-    ActivityAttachment, User
+    ActivityAttachment, ActivityHistory, User
 )
 from .views import get_user_context, role_required
+
+
+def validate_file_size(file):
+    """Valida se o arquivo não excede o tamanho máximo permitido"""
+    max_size = getattr(settings, 'MAX_UPLOAD_SIZE_MB', 500) * 1024 * 1024
+    if file.size > max_size:
+        max_mb = getattr(settings, 'MAX_UPLOAD_SIZE_MB', 500)
+        return False, f'Arquivo excede o limite de {max_mb}MB'
+    return True, None
 
 # ============================================================================
 # DOCUMENTOS
@@ -33,9 +45,13 @@ def opportunity_documents(request, pk):
 
     documents = opportunity.documents.all()
 
+    # Permissão de escrita (admin, gerente, analista)
+    can_write = profile.is_admin() or profile.is_manager() or profile.role == 'analista'
+
     context.update({
         'opportunity': opportunity,
         'documents': documents,
+        'can_write': can_write,
     })
 
     return render(request, 'prospecta/documents/list.html', context)
@@ -55,7 +71,13 @@ def upload_opportunity_document(request, pk):
         file = request.FILES.get('file')
 
         if not title or not file:
-            messages.error(request, 'Título e arquivo são obrigatórios.')
+            messages.error(request, 'Titulo e arquivo sao obrigatorios.')
+            return redirect('prospecta:opportunity_documents', pk=pk)
+
+        # Validar tamanho do arquivo
+        is_valid, error_msg = validate_file_size(file)
+        if not is_valid:
+            messages.error(request, error_msg)
             return redirect('prospecta:opportunity_documents', pk=pk)
 
         OpportunityDocument.objects.create(
@@ -106,7 +128,13 @@ def upload_activity_attachment(request, pk):
         description = request.POST.get('description', '')
 
         if not file:
-            messages.error(request, 'Arquivo é obrigatório.')
+            messages.error(request, 'Arquivo e obrigatorio.')
+            return redirect('prospecta:activity_detail', pk=pk)
+
+        # Validar tamanho do arquivo
+        is_valid, error_msg = validate_file_size(file)
+        if not is_valid:
+            messages.error(request, error_msg)
             return redirect('prospecta:activity_detail', pk=pk)
 
         ActivityAttachment.objects.create(
@@ -126,7 +154,8 @@ def upload_activity_attachment(request, pk):
 def delete_activity_attachment(request, pk):
     """Deletar anexo de atividade"""
     attachment = get_object_or_404(ActivityAttachment, pk=pk)
-    activity_pk = attachment.activity.pk
+    activity = attachment.activity
+    activity_pk = activity.pk
 
     # Verificar permissão
     profile = request.user.profile
@@ -134,6 +163,21 @@ def delete_activity_attachment(request, pk):
         messages.error(
             request, 'Você não tem permissão para deletar este anexo.')
         return redirect('prospecta:activity_detail', pk=activity_pk)
+
+    # Guardar info do arquivo antes de deletar
+    file_name = attachment.file.name.split(
+        '/')[-1] if attachment.file else 'arquivo'
+
+    # Registrar no historico
+    ActivityHistory.objects.create(
+        activity=activity,
+        changed_by=request.user,
+        change_type='update',
+        field_changed='anexo',
+        old_value=file_name,
+        new_value='',
+        comment=f'Anexo removido: {file_name}'
+    )
 
     attachment.delete()
     messages.success(request, 'Anexo deletado com sucesso!')
@@ -377,3 +421,73 @@ def activity_quick_associate(request, activity_pk):
         })
     except Meeting.DoesNotExist:
         return JsonResponse({'error': 'Reunião não encontrada'}, status=404)
+
+
+# ============================================================================
+# DOWNLOAD DE ARQUIVOS
+# ============================================================================
+
+@login_required(login_url='account_login')
+def download_activity_attachment(request, pk):
+    """Download de anexo de atividade"""
+    attachment = get_object_or_404(ActivityAttachment, pk=pk)
+    activity = attachment.activity
+    opportunity = activity.stage.opportunity
+
+    # Verificar permissão
+    profile = request.user.profile
+    if not profile.is_admin():
+        if opportunity.responsible_user != request.user and opportunity.created_by != request.user:
+            if not activity.assigned_to or activity.assigned_to != request.user:
+                raise Http404("Arquivo nao encontrado")
+
+    if not attachment.file:
+        raise Http404("Arquivo nao encontrado")
+
+    file_path = attachment.file.path
+    if not os.path.exists(file_path):
+        raise Http404("Arquivo nao encontrado")
+
+    content_type, _ = mimetypes.guess_type(file_path)
+    if content_type is None:
+        content_type = 'application/octet-stream'
+
+    response = FileResponse(
+        open(file_path, 'rb'),
+        content_type=content_type
+    )
+    filename = os.path.basename(attachment.file.name)
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required(login_url='account_login')
+def download_opportunity_document(request, pk):
+    """Download de documento de oportunidade"""
+    document = get_object_or_404(OpportunityDocument, pk=pk)
+    opportunity = document.opportunity
+
+    # Verificar permissão
+    profile = request.user.profile
+    if not document.is_public and not profile.is_admin():
+        if opportunity.responsible_user != request.user and opportunity.created_by != request.user:
+            raise Http404("Arquivo nao encontrado")
+
+    if not document.file:
+        raise Http404("Arquivo nao encontrado")
+
+    file_path = document.file.path
+    if not os.path.exists(file_path):
+        raise Http404("Arquivo nao encontrado")
+
+    content_type, _ = mimetypes.guess_type(file_path)
+    if content_type is None:
+        content_type = 'application/octet-stream'
+
+    response = FileResponse(
+        open(file_path, 'rb'),
+        content_type=content_type
+    )
+    filename = os.path.basename(document.file.name)
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

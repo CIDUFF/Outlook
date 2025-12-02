@@ -274,6 +274,7 @@ class Activity(models.Model):
     STATUS_CHOICES = [
         ('pendente', 'Pendente'),
         ('em_andamento', 'Em Andamento'),
+        ('aguardando_verificacao', 'Aguardando Verificação'),
         ('concluida', 'Concluída'),
         ('cancelada', 'Cancelada'),
     ]
@@ -288,6 +289,14 @@ class Activity(models.Model):
         ('outro', 'Outro'),
     ]
 
+    APPROVAL_STATUS_CHOICES = [
+        ('nao_aplicavel', 'Não Aplicável'),
+        ('pendente', 'Pendente'),
+        ('submetida', 'Submetida para Verificação'),
+        ('aprovada', 'Aprovada'),
+        ('reprovada', 'Reprovada'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,
                           editable=False, verbose_name='ID')
     stage = models.ForeignKey(
@@ -299,8 +308,23 @@ class Activity(models.Model):
                                     related_name='activities_assigned', verbose_name='Atribuída para')
     delegated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                      related_name='activities_delegated', verbose_name='Delegada por')
+    # Novos campos para fluxo de verificação/aprovação
+    verifier = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='activities_to_verify', verbose_name='Verificador')
+    previous_assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                             related_name='activities_previously_assigned', verbose_name='Responsável Anterior')
+    completion_notes = models.TextField(
+        blank=True, null=True, verbose_name='Notas de Conclusão')
+    rejection_reason = models.TextField(
+        blank=True, null=True, verbose_name='Motivo da Reprovação')
+    submission_date = models.DateTimeField(
+        blank=True, null=True, verbose_name='Data de Submissão')
+    approval_status = models.CharField(
+        max_length=20, choices=APPROVAL_STATUS_CHOICES, default='nao_aplicavel', verbose_name='Status de Aprovação')
+    assigned_at = models.DateTimeField(
+        blank=True, null=True, verbose_name='Data da Atribuição')
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='pendente', verbose_name='Status')
+        max_length=30, choices=STATUS_CHOICES, default='pendente', verbose_name='Status')
     activity_type = models.CharField(
         max_length=20, choices=ACTIVITY_TYPE_CHOICES, default='tarefa', verbose_name='Tipo de Atividade')
     start_date = models.DateField(
@@ -312,6 +336,8 @@ class Activity(models.Model):
     approved = models.BooleanField(default=False, verbose_name='Aprovada')
     approval_date = models.DateTimeField(
         blank=True, null=True, verbose_name='Data de Aprovação')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='activities_approved', verbose_name='Aprovada por')
     # Reunião associada (opcional)
     meeting = models.ForeignKey(
         'Meeting', on_delete=models.SET_NULL, null=True, blank=True,
@@ -328,6 +354,14 @@ class Activity(models.Model):
 
     def __str__(self):
         return self.title
+
+    def can_be_submitted_for_verification(self):
+        """Verifica se a atividade pode ser submetida para verificação"""
+        return self.status in ['em_andamento', 'pendente'] and self.approval_status in ['nao_aplicavel', 'pendente', 'reprovada']
+
+    def can_be_verified(self):
+        """Verifica se a atividade está aguardando verificação"""
+        return self.approval_status == 'submetida' and self.status == 'aguardando_verificacao'
 
 
 class OpportunityHistory(models.Model):
@@ -589,3 +623,113 @@ class Meeting(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.start_datetime.strftime('%d/%m/%Y %H:%M')}"
+
+
+# ============================================================================
+# NOTIFICAÇÕES DO SISTEMA
+# ============================================================================
+
+class Notification(models.Model):
+    """Notificações in-app e por email"""
+    NOTIFICATION_TYPE_CHOICES = [
+        ('activity_assigned', 'Atividade Atribuída'),
+        ('activity_reassigned', 'Atividade Reatribuída'),
+        ('activity_submitted', 'Atividade Submetida para Verificação'),
+        ('activity_approved', 'Atividade Aprovada'),
+        ('activity_rejected', 'Atividade Reprovada'),
+        ('activity_reminder', 'Lembrete de Atividade'),
+        ('activity_comment', 'Comentário em Atividade'),
+        ('opportunity_update', 'Atualização de Oportunidade'),
+        ('general', 'Notificação Geral'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('low', 'Baixa'),
+        ('normal', 'Normal'),
+        ('high', 'Alta'),
+        ('urgent', 'Urgente'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False, verbose_name='ID')
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='notifications', verbose_name='Destinatário')
+    sender = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='notifications_sent', verbose_name='Remetente')
+    notification_type = models.CharField(
+        max_length=50, choices=NOTIFICATION_TYPE_CHOICES, default='general', verbose_name='Tipo')
+    priority = models.CharField(
+        max_length=10, choices=PRIORITY_CHOICES, default='normal', verbose_name='Prioridade')
+    title = models.CharField(max_length=255, verbose_name='Título')
+    message = models.TextField(verbose_name='Mensagem')
+
+    # Relacionamentos opcionais
+    related_activity = models.ForeignKey(
+        Activity, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='notifications', verbose_name='Atividade Relacionada')
+    related_opportunity = models.ForeignKey(
+        Opportunity, on_delete=models.CASCADE, null=True, blank=True,
+        related_name='notifications', verbose_name='Oportunidade Relacionada')
+
+    # Status
+    is_read = models.BooleanField(default=False, verbose_name='Lida')
+    read_at = models.DateTimeField(
+        blank=True, null=True, verbose_name='Lida em')
+    email_sent = models.BooleanField(
+        default=False, verbose_name='Email Enviado')
+    email_sent_at = models.DateTimeField(
+        blank=True, null=True, verbose_name='Email Enviado em')
+
+    # URL para redirecionamento
+    action_url = models.CharField(
+        max_length=500, blank=True, null=True, verbose_name='URL de Ação')
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Criado em')
+
+    class Meta:
+        db_table = 'tab_notifications'
+        verbose_name = 'Notificação'
+        verbose_name_plural = 'Notificações'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', 'is_read']),
+            models.Index(fields=['recipient', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.recipient.get_full_name()}"
+
+    def mark_as_read(self):
+        """Marca a notificação como lida"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])
+
+
+class ActivityComment(models.Model):
+    """Comentários nas atividades para comunicação entre responsável e verificador"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False, verbose_name='ID')
+    activity = models.ForeignKey(
+        Activity, on_delete=models.CASCADE, related_name='comments', verbose_name='Atividade')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='activity_comments', verbose_name='Autor')
+    content = models.TextField(verbose_name='Conteúdo')
+    is_system_message = models.BooleanField(
+        default=False, verbose_name='Mensagem do Sistema')
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Criado em')
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name='Atualizado em')
+
+    class Meta:
+        db_table = 'tab_activity_comments'
+        verbose_name = 'Comentário de Atividade'
+        verbose_name_plural = 'Comentários de Atividades'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comentário de {self.author.get_full_name()} em {self.activity.title}"

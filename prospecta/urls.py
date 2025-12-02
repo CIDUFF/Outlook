@@ -61,6 +61,10 @@ urlpatterns = [
 
     # Activities
     path('atividades/', views.activities_list, name='activities_list'),
+    path('atividades/criar/', views.activity_create_standalone,
+         name='activity_create_standalone'),
+    path('atividades/<uuid:pk>/',
+         views.activity_detail, name='activity_detail'),
     path('atividades/<uuid:pk>/aprovar/',
          views.activity_approve, name='activity_approve'),
     path('atividades/criar/<uuid:stage_pk>/',
@@ -69,6 +73,24 @@ urlpatterns = [
          views.activity_update, name='activity_update'),
     path('atividades/<uuid:pk>/deletar/',
          views.activity_delete, name='activity_delete'),
+    # Fluxo de submissão e verificação
+    path('atividades/<uuid:pk>/submeter/',
+         views.activity_submit_completion, name='activity_submit_completion'),
+    path('atividades/<uuid:pk>/verificar/',
+         views.activity_verify, name='activity_verify'),
+    path('atividades/<uuid:pk>/comentar/',
+         views.activity_add_comment, name='activity_add_comment'),
+
+    # Notificações
+    path('notificacoes/', views.notifications_list, name='notifications_list'),
+    path('notificacoes/<uuid:pk>/marcar-lida/',
+         views.notification_mark_read, name='notification_mark_read'),
+    path('notificacoes/marcar-todas-lidas/',
+         views.notifications_mark_all_read, name='notifications_mark_all_read'),
+    path('api/notificacoes/dropdown/',
+         views.notifications_dropdown, name='notifications_dropdown'),
+    path('api/notificacoes/count/',
+         views.notifications_count, name='notifications_count'),
 
     # Stages
     path('etapas/', views.stages_list, name='stages_list'),
@@ -112,11 +134,15 @@ urlpatterns = [
          calendar_views.upload_opportunity_document, name='upload_opportunity_document'),
     path('documentos/<uuid:pk>/deletar/',
          calendar_views.delete_opportunity_document, name='delete_opportunity_document'),
+    path('documentos/<uuid:pk>/download/',
+         calendar_views.download_opportunity_document, name='download_opportunity_document'),
 
     path('atividades/<uuid:pk>/anexos/upload/',
          calendar_views.upload_activity_attachment, name='upload_activity_attachment'),
     path('anexos/<uuid:pk>/deletar/',
          calendar_views.delete_activity_attachment, name='delete_activity_attachment'),
+    path('anexos/<uuid:pk>/download/',
+         calendar_views.download_activity_attachment, name='download_activity_attachment'),
 
     # ========================================================================
     # REUNIÕES E CALENDÁRIO

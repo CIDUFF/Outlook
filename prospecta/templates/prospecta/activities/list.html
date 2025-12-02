@@ -10,6 +10,10 @@
             <h1 class="text-4xl font-bold text-gray-900">Minhas Atividades</h1>
             <p class="text-gray-600 mt-2">Gerencie suas tarefas e atividades</p>
         </div>
+        <a href="{% url 'prospecta:activity_create_standalone' %}" 
+           class="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium shadow-sm">
+            <i class="fas fa-plus mr-2"></i>Nova Atividade
+        </a>
     </div>
 
     <!-- Status Filter -->
@@ -36,15 +40,22 @@
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Título</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Oportunidade</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Delegada por</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Data Esperada</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Aprovada</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ação</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Ações</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     {% for activity in activities %}
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ activity.title }}</td>
+                        <td class="px-6 py-4 text-sm font-medium">
+                            <a href="{% url 'prospecta:activity_detail' pk=activity.pk %}" class="text-blue-600 hover:text-blue-800 hover:underline">
+                                {{ activity.title }}
+                            </a>
+                            {% if activity.approval_status == 'reprovada' %}
+                            <span class="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">Requer correção</span>
+                            {% endif %}
+                        </td>
                         <td class="px-6 py-4 text-sm text-gray-600">
                             <a href="{% url 'prospecta:opportunity_detail' pk=activity.stage.opportunity.pk %}" class="text-blue-600 hover:text-blue-700">
                                 {{ activity.stage.opportunity.title }}
@@ -52,40 +63,56 @@
                         </td>
                         <td class="px-6 py-4 text-sm">
                             {% if activity.status == 'pendente' %}
-                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Pendente</span>
+                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Pendente</span>
                             {% elif activity.status == 'em_andamento' %}
                             <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Em Andamento</span>
+                            {% elif activity.status == 'aguardando_verificacao' %}
+                            <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Aguardando Verificação</span>
                             {% elif activity.status == 'concluida' %}
                             <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Concluída</span>
                             {% else %}
-                            <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelada</span>
+                            <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Cancelada</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            {% if activity.delegated_by %}
+                                {{ activity.delegated_by.get_full_name }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">
                             {{ activity.expected_date|date:'d/m/Y'|default:"N/A" }}
                         </td>
                         <td class="px-6 py-4 text-sm">
-                            {% if activity.approved %}
-                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                                <i class="fas fa-check mr-1"></i>Sim
-                            </span>
-                            {% else %}
-                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                <i class="fas fa-clock mr-1"></i>Não
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-sm space-x-2">
-                            {% if not activity.approved and is_manager %}
-                            <form method="post" action="{% url 'prospecta:activity_approve' pk=activity.pk %}" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="text-green-600 hover:text-green-700 font-medium">
-                                    <i class="fas fa-check mr-1"></i>Aprovar
-                                </button>
-                            </form>
-                            {% else %}
-                            <span class="text-gray-400">-</span>
-                            {% endif %}
+                            <div class="flex items-center gap-2">
+                                {% if activity.assigned_to == request.user and activity.can_be_submitted_for_verification %}
+                                <!-- Usuário é o responsável e pode submeter -->
+                                <a href="{% url 'prospecta:activity_submit_completion' pk=activity.pk %}" 
+                                   class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition">
+                                    <i class="fas fa-paper-plane mr-1"></i>Submeter
+                                </a>
+                                {% elif activity.verifier == request.user and activity.can_be_verified %}
+                                <!-- Usuário é o verificador e pode aprovar/reprovar -->
+                                <a href="{% url 'prospecta:activity_verify' pk=activity.pk %}" 
+                                   class="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition">
+                                    <i class="fas fa-check-circle mr-1"></i>Verificar
+                                </a>
+                                {% elif activity.approved %}
+                                <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                    <i class="fas fa-check mr-1"></i>Aprovada
+                                </span>
+                                {% elif activity.status == 'aguardando_verificacao' %}
+                                <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                    <i class="fas fa-hourglass-half mr-1"></i>Aguardando
+                                </span>
+                                {% else %}
+                                <a href="{% url 'prospecta:activity_update' pk=activity.pk %}" 
+                                   class="text-gray-500 hover:text-blue-600">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% empty %}

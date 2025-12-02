@@ -1,0 +1,19 @@
+{% autoescape off %}
+PROSPECTA - Sistema de Gestão de Oportunidades
+============================================
+
+Olá, {{ recipient_name }}!
+
+{{ title }}
+
+{{ message }}
+
+{% if action_url %}
+Para ver mais detalhes, acesse:
+{{ action_url }}
+{% endif %}
+
+---
+Esta é uma notificação automática do sistema PROSPECTA.
+Você está recebendo este email porque está cadastrado na plataforma.
+{% endautoescape %}

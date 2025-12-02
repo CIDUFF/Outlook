@@ -1,0 +1,316 @@
+{% extends 'prospecta/base.html' %}
+{% load static %}
+
+{% block title %}{{ activity.title }} - PROSPECTA{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Navegação -->
+        <div class="mb-6 flex items-center justify-between">
+            <a href="{% url 'prospecta:activities_list' %}" class="text-blue-600 hover:text-blue-800">
+                <i class="fas fa-arrow-left mr-2"></i>Voltar para Atividades
+            </a>
+            <div class="flex gap-2">
+                {% if can_submit %}
+                <a href="{% url 'prospecta:activity_submit_completion' pk=activity.pk %}" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                    <i class="fas fa-paper-plane mr-2"></i>Submeter para Verificação
+                </a>
+                {% endif %}
+                {% if can_verify %}
+                <a href="{% url 'prospecta:activity_verify' pk=activity.pk %}" 
+                   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+                    <i class="fas fa-check-circle mr-2"></i>Verificar Atividade
+                </a>
+                {% endif %}
+                {% if is_manager or is_admin %}
+                <a href="{% url 'prospecta:activity_update' pk=activity.pk %}" 
+                   class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+                    <i class="fas fa-edit mr-2"></i>Editar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Cabeçalho da Atividade -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ activity.title }}</h1>
+                    <p class="text-gray-600 mt-1">
+                        <a href="{% url 'prospecta:opportunity_detail' pk=activity.stage.opportunity.pk %}" class="text-blue-600 hover:text-blue-800">
+                            {{ activity.stage.opportunity.title }}
+                        </a>
+                        <span class="mx-2">›</span>
+                        <span class="text-gray-500">{{ activity.stage.name }}</span>
+                    </p>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                    <!-- Status -->
+                    {% if activity.status == 'pendente' %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-semibold">Pendente</span>
+                    {% elif activity.status == 'em_andamento' %}
+                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">Em Andamento</span>
+                    {% elif activity.status == 'aguardando_verificacao' %}
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">Aguardando Verificação</span>
+                    {% elif activity.status == 'concluida' %}
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">Concluída</span>
+                    {% else %}
+                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">Cancelada</span>
+                    {% endif %}
+                    
+                    <!-- Aprovação -->
+                    {% if activity.approved %}
+                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                        <i class="fas fa-check mr-1"></i>Aprovada
+                    </span>
+                    {% elif activity.approval_status == 'reprovada' %}
+                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">
+                        <i class="fas fa-times mr-1"></i>Reprovada
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Informações -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Tipo</p>
+                    <p class="font-medium text-gray-900">{{ activity.get_activity_type_display }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Responsável</p>
+                    <p class="font-medium text-gray-900">{{ activity.assigned_to.get_full_name|default:"Não atribuído" }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Delegada por</p>
+                    <p class="font-medium text-gray-900">{{ activity.delegated_by.get_full_name|default:"-" }}</p>
+                </div>
+                {% if activity.verifier %}
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Verificador</p>
+                    <p class="font-medium text-gray-900">{{ activity.verifier.get_full_name }}</p>
+                </div>
+                {% endif %}
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Data Esperada</p>
+                    <p class="font-medium text-gray-900">{{ activity.expected_date|date:"d/m/Y"|default:"Não definida" }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Criada em</p>
+                    <p class="font-medium text-gray-900">{{ activity.created_at|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+
+            <!-- Descrição -->
+            {% if activity.description %}
+            <div class="border-t pt-4">
+                <h3 class="font-semibold text-gray-700 mb-2">Descrição</h3>
+                <p class="text-gray-600 whitespace-pre-wrap">{{ activity.description }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Notas de Conclusão -->
+            {% if activity.completion_notes %}
+            <div class="border-t pt-4 mt-4">
+                <h3 class="font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-clipboard-check mr-2 text-blue-600"></i>Notas de Conclusão
+                </h3>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-gray-700 whitespace-pre-wrap">{{ activity.completion_notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Motivo da Reprovação -->
+            {% if activity.rejection_reason %}
+            <div class="border-t pt-4 mt-4">
+                <h3 class="font-semibold text-red-700 mb-2">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Motivo da Reprovação
+                </h3>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-700 whitespace-pre-wrap">{{ activity.rejection_reason }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Comentários -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-comments mr-2 text-purple-600"></i>
+                Comentários ({{ comments.count }})
+            </h2>
+
+            {% if comments %}
+            <div class="space-y-4 mb-6">
+                {% for comment in comments %}
+                <div class="{% if comment.is_system_message %}bg-gray-50 border-l-4 border-gray-300{% else %}bg-white border border-gray-200{% endif %} rounded-lg p-4">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            {% if comment.is_system_message %}
+                            <span class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-gray-600 text-sm"></i>
+                            </span>
+                            <span class="font-medium text-gray-600">Sistema</span>
+                            {% else %}
+                            <span class="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                {{ comment.author.first_name|slice:":1" }}{{ comment.author.last_name|slice:":1" }}
+                            </span>
+                            <span class="font-medium text-gray-900">{{ comment.author.get_full_name }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="text-xs text-gray-500">{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="{% if comment.is_system_message %}text-gray-600{% else %}text-gray-700{% endif %} whitespace-pre-wrap ml-10">
+                        {{ comment.content }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-4">Nenhum comentário ainda.</p>
+            {% endif %}
+
+            <!-- Formulário de Comentário -->
+            {% if can_comment %}
+            <div class="border-t pt-4">
+                <form method="post" action="{% url 'prospecta:activity_add_comment' pk=activity.pk %}">
+                    {% csrf_token %}
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <textarea name="content" rows="2" required
+                                      placeholder="Adicione um comentário..."
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"></textarea>
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition self-end">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Anexos -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-paperclip mr-2 text-blue-600"></i>
+                Anexos ({{ activity.attachments.count }})
+            </h2>
+
+            {% if activity.attachments.exists %}
+            <div class="space-y-3 mb-6">
+                {% for attachment in activity.attachments.all %}
+                <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            {% with ext=attachment.file.name|slice:"-4:" %}
+                            {% if ext == '.pdf' %}
+                            <i class="fas fa-file-pdf text-red-500 text-lg"></i>
+                            {% elif ext == '.doc' or ext == 'docx' %}
+                            <i class="fas fa-file-word text-blue-600 text-lg"></i>
+                            {% elif ext == '.xls' or ext == 'xlsx' %}
+                            <i class="fas fa-file-excel text-green-600 text-lg"></i>
+                            {% elif ext == '.png' or ext == '.jpg' or ext == 'jpeg' or ext == '.gif' %}
+                            <i class="fas fa-file-image text-purple-500 text-lg"></i>
+                            {% elif ext == '.zip' or ext == '.rar' %}
+                            <i class="fas fa-file-archive text-yellow-600 text-lg"></i>
+                            {% else %}
+                            <i class="fas fa-file text-gray-500 text-lg"></i>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 text-sm">{{ attachment.file.name|slice:"20:" }}</p>
+                            <p class="text-xs text-gray-500">
+                                {{ attachment.uploaded_by.get_full_name }} - {{ attachment.created_at|date:"d/m/Y H:i" }}
+                            </p>
+                            {% if attachment.description %}
+                            <p class="text-xs text-gray-600 mt-1">{{ attachment.description }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="{% url 'prospecta:download_activity_attachment' pk=attachment.pk %}" 
+                           class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                           title="Download">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        {% if is_admin or attachment.uploaded_by == request.user %}
+                        <form method="post" action="{% url 'prospecta:delete_activity_attachment' pk=attachment.pk %}" 
+                              class="inline" onsubmit="return confirm('Tem certeza que deseja excluir este anexo?');">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                                    title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-4 mb-4">Nenhum anexo nesta atividade.</p>
+            {% endif %}
+
+            <!-- Formulário de Upload -->
+            {% if is_admin or is_manager or user == activity.assigned_to %}
+            <div class="border-t pt-4">
+                <h3 class="font-medium text-gray-700 mb-3">Adicionar Anexo</h3>
+                <form method="post" action="{% url 'prospecta:upload_activity_attachment' pk=activity.pk %}" 
+                      enctype="multipart/form-data" class="space-y-3">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Arquivo</label>
+                        <input type="file" name="file" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                        <p class="text-xs text-gray-500 mt-1">Tamanho maximo: 500MB</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descricao (opcional)</label>
+                        <input type="text" name="description" 
+                               placeholder="Descreva o anexo..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                    </div>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                        <i class="fas fa-upload mr-2"></i>Enviar Anexo
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Histórico -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-history mr-2 text-gray-600"></i>
+                Histórico
+            </h2>
+
+            {% if history %}
+            <div class="space-y-3">
+                {% for entry in history %}
+                <div class="flex items-start gap-3 text-sm">
+                    <div class="flex-shrink-0 w-2 h-2 bg-gray-400 rounded-full mt-2"></div>
+                    <div class="flex-1">
+                        <p class="text-gray-700">{{ entry.change_details }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ entry.changed_at|date:"d/m/Y H:i" }}
+                            {% if entry.changed_by %} - {{ entry.changed_by.get_full_name }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-4">Nenhum histórico disponível.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

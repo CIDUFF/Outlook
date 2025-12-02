@@ -1,0 +1,18 @@
+[Unit]
+Description=PROSPECTA Gunicorn Application Server
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=marcus
+Group=marcus
+WorkingDirectory=/home/marcus/desenvolvimento/Outlook
+Environment="PATH=/home/marcus/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/marcus/.local/bin/uv run gunicorn Outlook.wsgi:application --bind 127.0.0.1:8555 --workers 3 --timeout 120 --access-logfile /home/marcus/desenvolvimento/Outlook/logs/gunicorn_access.log --error-logfile /home/marcus/desenvolvimento/Outlook/logs/gunicorn_error.log
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

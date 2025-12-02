@@ -55,15 +55,18 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
+    'background_task',
 
     # Local apps
     'prospecta',
 ]
 
 SITE_ID = config('SITE_ID', default=1, cast=int)
+SITE_URL = config('SITE_URL', default='http://localhost:8555')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -171,8 +174,24 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# WhiteNoise configuration for serving static files in production
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Media files (uploads)
+MEDIA_URL = config('MEDIA_URL', default='/media/')
+MEDIA_ROOT = config('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
+
+# File upload settings
+MAX_UPLOAD_SIZE_MB = config('MAX_UPLOAD_SIZE_MB', default=500, cast=int)
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024  # Convert to bytes
+FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -270,3 +289,36 @@ LOGGING = {
         },
     },
 }
+
+# =============================================================================
+# SECURITY SETTINGS (Production)
+# =============================================================================
+
+# CSRF Trusted Origins (required for POST requests behind proxy)
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in config(
+    'CSRF_TRUSTED_ORIGINS', default='https://prospecta.cid-uff.net').split(',')]
+
+# Security settings - only enabled when DEBUG=False
+if not DEBUG:
+    # HTTPS/SSL
+    SECURE_SSL_REDIRECT = config(
+        'SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SESSION_COOKIE_SECURE = config(
+        'SESSION_COOKIE_SECURE', default=True, cast=bool)
+    CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
+
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Other security headers
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+
+    # Logging level for production
+    LOGGING['loggers']['allauth']['level'] = 'WARNING'
+    LOGGING['loggers']['allauth.socialaccount']['level'] = 'WARNING'
+    LOGGING['loggers']['allauth.socialaccount.providers']['level'] = 'WARNING'
+    LOGGING['loggers']['allauth.account']['level'] = 'WARNING'
