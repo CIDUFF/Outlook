@@ -915,25 +915,29 @@ def stage_create(request, opportunity_pk):
     context = get_user_context(request.user)
 
     if request.method == 'POST':
+        responsible_user_id = request.POST.get('responsible_user')
         stage = Stage(
             opportunity=opportunity,
             name=request.POST['name'],
             order=request.POST.get('order', 1),
+            responsible_user_id=responsible_user_id if responsible_user_id else None,
             created_by=request.user,
         )
         stage.save()
 
+        responsible_name = stage.responsible_user.get_full_name() if stage.responsible_user else 'Não definido'
         StageHistory.objects.create(
             stage=stage,
             changed_by=request.user,
             change_type='criacao',
-            change_details=f'Etapa criada por {request.user.get_full_name()}'
+            change_details=f'Etapa criada por {request.user.get_full_name()}. Responsável: {responsible_name}'
         )
 
         messages.success(request, 'Etapa criada com sucesso!')
         return redirect('prospecta:opportunity_detail', pk=opportunity.pk)
 
     context['opportunity'] = opportunity
+    context['users'] = User.objects.filter(profile__is_active=True)
     return render(request, 'prospecta/stages/form.html', context)
 
 
@@ -944,15 +948,25 @@ def stage_update(request, pk):
     stage = get_object_or_404(Stage, pk=pk)
 
     if request.method == 'POST':
+        old_responsible = stage.responsible_user
         stage.name = request.POST['name']
         stage.order = request.POST.get('order', stage.order)
+        responsible_user_id = request.POST.get('responsible_user')
+        stage.responsible_user_id = responsible_user_id if responsible_user_id else None
         stage.save()
+
+        # Montar detalhes da mudança
+        details = f'Etapa atualizada por {request.user.get_full_name()}'
+        if old_responsible != stage.responsible_user:
+            old_name = old_responsible.get_full_name() if old_responsible else 'Não definido'
+            new_name = stage.responsible_user.get_full_name() if stage.responsible_user else 'Não definido'
+            details += f'. Responsável alterado de "{old_name}" para "{new_name}"'
 
         StageHistory.objects.create(
             stage=stage,
             changed_by=request.user,
             change_type='atualizacao',
-            change_details=f'Etapa atualizada por {request.user.get_full_name()}'
+            change_details=details
         )
 
         messages.success(request, 'Etapa atualizada com sucesso!')
@@ -960,6 +974,7 @@ def stage_update(request, pk):
 
     context = get_user_context(request.user)
     context['stage'] = stage
+    context['users'] = User.objects.filter(profile__is_active=True)
     return render(request, 'prospecta/stages/form.html', context)
 
 

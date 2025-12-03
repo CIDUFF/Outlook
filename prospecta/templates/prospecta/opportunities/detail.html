@@ -199,7 +199,14 @@
                 <div class="flex justify-between items-start mb-3">
                     <div class="flex-1">
                         <h3 class="font-semibold text-gray-900 text-lg">#{{ stage.order }} {{ stage.name }}</h3>
-                        <p class="text-sm text-gray-600">{{ stage.activities.count }} atividade(s)</p>
+                        <div class="flex items-center gap-4 text-sm text-gray-600">
+                            <span>{{ stage.activities.count }} atividade(s)</span>
+                            {% if stage.responsible_user %}
+                            <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                <i class="fas fa-user-tie mr-1"></i>{{ stage.responsible_user.get_full_name|default:stage.responsible_user.username }}
+                            </span>
+                            {% endif %}
+                        </div>
                     </div>
                     {% if is_manager %}
                     <div class="flex gap-2">

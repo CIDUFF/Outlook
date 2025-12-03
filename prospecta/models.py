@@ -254,6 +254,9 @@ class Stage(models.Model):
         Opportunity, on_delete=models.CASCADE, related_name='stages', verbose_name='Oportunidade')
     name = models.CharField(max_length=255, verbose_name='Nome')
     order = models.IntegerField(verbose_name='Ordem')
+    responsible_user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='stages_responsible', verbose_name='Responsável pela Etapa')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL,
                                    null=True, related_name='stages_created', verbose_name='Criado por')
     created_at = models.DateTimeField(
