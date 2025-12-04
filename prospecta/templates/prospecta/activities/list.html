@@ -51,7 +51,7 @@
     <!-- Hierarchical View -->
     <div class="space-y-6">
         {% for opp_pk, opp_data in hierarchy.items %}
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow overflow-hidden opportunity-container" data-opportunity-id="{{ opp_data.opportunity.pk }}">
             <!-- Opportunity Header -->
             <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                 <div class="flex items-center justify-between">
@@ -68,6 +68,11 @@
                                 <i class="fas fa-building mr-1"></i>{{ opp_data.opportunity.client.name }}
                                 {% if opp_data.opportunity.status %}
                                 <span class="ml-3 px-2 py-0.5 bg-white/20 rounded text-xs">{{ opp_data.opportunity.get_status_display }}</span>
+                                {% endif %}
+                                {% if is_manager %}
+                                <span class="ml-3 px-2 py-0.5 bg-white/10 rounded text-xs">
+                                    <i class="fas fa-arrows-alt mr-1"></i>Arraste para reorganizar
+                                </span>
                                 {% endif %}
                             </p>
                         </div>
@@ -89,7 +94,7 @@
             <!-- Stages -->
             <div class="divide-y divide-gray-200">
                 {% for stage_pk, stage_data in opp_data.stages.items %}
-                <div class="bg-gray-50">
+                <div class="bg-gray-50 stage-section" data-stage-id="{{ stage_data.stage.pk }}" data-opportunity-id="{{ opp_data.opportunity.pk }}">
                     <!-- Stage Header -->
                     <div class="px-6 py-3 flex items-center justify-between border-b border-gray-200">
                         <div class="flex items-center">
@@ -108,17 +113,29 @@
                                 <p class="text-xs text-gray-500">Etapa {{ stage_data.stage.order }}</p>
                             </div>
                         </div>
-                        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium activity-count-badge">
                             {{ stage_data.activities|length }} atividade{{ stage_data.activities|length|pluralize:"s" }}
                         </span>
                     </div>
                     
-                    <!-- Activities in Stage -->
-                    <div class="bg-white">
+                    <!-- Activities in Stage - Drop Zone -->
+                    <div class="bg-white activities-dropzone-list min-h-[80px] transition-all duration-200" 
+                         data-stage-id="{{ stage_data.stage.pk }}"
+                         data-stage-name="{{ stage_data.stage.name }}"
+                         data-opportunity-id="{{ opp_data.opportunity.pk }}">
                         {% for activity in stage_data.activities %}
-                        <div class="px-6 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition">
+                        <div class="px-6 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition activity-item {% if is_manager %}cursor-move{% endif %}"
+                             {% if is_manager %}draggable="true"{% endif %}
+                             data-activity-id="{{ activity.pk }}"
+                             data-activity-title="{{ activity.title }}"
+                             data-opportunity-id="{{ opp_data.opportunity.pk }}">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-start flex-1">
+                                    {% if is_manager %}
+                                    <div class="drag-handle mr-3 mt-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
+                                    {% endif %}
                                     <div class="mr-4 mt-1">
                                         {% if activity.status == 'concluida' %}
                                         <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -191,6 +208,11 @@
                                     {% endif %}
                                 </div>
                             </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state px-6 py-8 text-center text-gray-400">
+                            <i class="fas fa-inbox text-2xl mb-2"></i>
+                            <p class="text-sm">Arraste atividades para esta etapa</p>
                         </div>
                         {% endfor %}
                     </div>
@@ -345,5 +367,222 @@ document.getElementById('statusFilter').addEventListener('change', function() {
     }
     window.location.href = currentUrl.toString();
 });
+
+{% if is_manager and view_type == 'hierarchy' %}
+// Drag and Drop para a view hierárquica
+(function() {
+    const activityItems = document.querySelectorAll('.activity-item[draggable="true"]');
+    const dropzones = document.querySelectorAll('.activities-dropzone-list');
+    let draggedElement = null;
+    let sourceDropzone = null;
+    let sourceOpportunityId = null;
+
+    // Estilos para drag
+    const dragStyles = {
+        dragging: 'opacity-50 bg-blue-50 shadow-lg scale-[1.02]',
+        dropzoneHover: 'bg-blue-50 ring-2 ring-blue-400 ring-inset',
+        dropzoneActive: 'ring-1 ring-blue-300 ring-inset'
+    };
+
+    // Eventos de Drag para as atividades
+    activityItems.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            draggedElement = this;
+            sourceDropzone = this.closest('.activities-dropzone-list');
+            sourceOpportunityId = this.dataset.opportunityId;
+            
+            setTimeout(() => {
+                this.classList.add(...dragStyles.dragging.split(' '));
+            }, 0);
+            
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.activityId);
+            e.dataTransfer.setData('application/json', JSON.stringify({
+                activityId: this.dataset.activityId,
+                opportunityId: this.dataset.opportunityId
+            }));
+            
+            // Destacar dropzones da mesma oportunidade
+            dropzones.forEach(dz => {
+                if (dz.dataset.opportunityId === sourceOpportunityId && dz !== sourceDropzone) {
+                    dz.classList.add(dragStyles.dropzoneActive);
+                }
+            });
+        });
+
+        item.addEventListener('dragend', function(e) {
+            this.classList.remove(...dragStyles.dragging.split(' '));
+            
+            dropzones.forEach(dz => {
+                dz.classList.remove(dragStyles.dropzoneActive);
+                dz.classList.remove(...dragStyles.dropzoneHover.split(' '));
+            });
+            
+            draggedElement = null;
+            sourceDropzone = null;
+            sourceOpportunityId = null;
+        });
+    });
+
+    // Eventos de Drop para as zonas de etapas
+    dropzones.forEach(dropzone => {
+        dropzone.addEventListener('dragover', function(e) {
+            // Só permitir drop se for da mesma oportunidade
+            if (sourceOpportunityId && this.dataset.opportunityId === sourceOpportunityId) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (this !== sourceDropzone) {
+                    this.classList.add(...dragStyles.dropzoneHover.split(' '));
+                }
+            }
+        });
+
+        dropzone.addEventListener('dragleave', function(e) {
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove(...dragStyles.dropzoneHover.split(' '));
+            }
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove(...dragStyles.dropzoneHover.split(' '));
+            
+            // Verificar se é da mesma oportunidade
+            if (!draggedElement || this === sourceDropzone) return;
+            if (this.dataset.opportunityId !== sourceOpportunityId) {
+                showNotification('✕ Só é possível mover atividades entre etapas da mesma oportunidade', 'error');
+                return;
+            }
+
+            const activityId = e.dataTransfer.getData('text/plain');
+            const newStageId = this.dataset.stageId;
+            const newStageName = this.dataset.stageName;
+            const activityTitle = draggedElement.dataset.activityTitle;
+
+            // Mover visualmente
+            const emptyState = this.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            this.appendChild(draggedElement);
+
+            // Atualizar contadores
+            updateActivityCount(sourceDropzone);
+            updateActivityCount(this);
+
+            // Persistir via API
+            moveActivity(activityId, newStageId, activityTitle, newStageName, sourceDropzone, this);
+        });
+    });
+
+    function updateActivityCount(dropzone) {
+        const stageSection = dropzone.closest('.stage-section');
+        const countBadge = stageSection.querySelector('.activity-count-badge');
+        const activityCount = dropzone.querySelectorAll('.activity-item').length;
+        
+        const plural = activityCount !== 1 ? 's' : '';
+        countBadge.textContent = `${activityCount} atividade${plural}`;
+        
+        // Adicionar/remover empty state
+        const emptyState = dropzone.querySelector('.empty-state');
+        if (activityCount === 0 && !emptyState) {
+            const newEmptyState = document.createElement('div');
+            newEmptyState.className = 'empty-state px-6 py-8 text-center text-gray-400';
+            newEmptyState.innerHTML = '<i class="fas fa-inbox text-2xl mb-2"></i><p class="text-sm">Arraste atividades para esta etapa</p>';
+            dropzone.appendChild(newEmptyState);
+        }
+    }
+
+    function moveActivity(activityId, newStageId, activityTitle, newStageName, sourceDropzone, targetDropzone) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                          document.querySelector('meta[name="csrf-token"]')?.content ||
+                          getCookie('csrftoken');
+
+        fetch(`/api/atividades/${activityId}/mover/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ stage_id: newStageId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`✓ "${activityTitle}" movida para "${newStageName}"`, 'success');
+            } else {
+                showNotification(`✕ Erro: ${data.error}`, 'error');
+                revertMove(sourceDropzone, targetDropzone, activityId);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao mover atividade:', error);
+            showNotification('✕ Erro ao mover atividade', 'error');
+            revertMove(sourceDropzone, targetDropzone, activityId);
+        });
+    }
+
+    function revertMove(sourceDropzone, targetDropzone, activityId) {
+        const item = targetDropzone.querySelector(`[data-activity-id="${activityId}"]`);
+        if (item && sourceDropzone) {
+            sourceDropzone.appendChild(item);
+            updateActivityCount(sourceDropzone);
+            updateActivityCount(targetDropzone);
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-full opacity-0 ${
+            type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`;
+        notification.innerHTML = message;
+        document.body.appendChild(notification);
+
+        requestAnimationFrame(() => {
+            notification.classList.remove('translate-y-full', 'opacity-0');
+        });
+
+        setTimeout(() => {
+            notification.classList.add('translate-y-full', 'opacity-0');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+})();
+{% endif %}
 </script>
+
+{% if is_manager and view_type == 'hierarchy' %}
+<style>
+/* Estilos para drag and drop na lista de atividades */
+.activity-item {
+    transition: all 0.2s ease;
+}
+.activity-item[draggable="true"]:hover {
+    background-color: rgb(249 250 251);
+}
+.activities-dropzone-list {
+    transition: all 0.2s ease;
+}
+.drag-handle {
+    transition: color 0.15s ease;
+}
+</style>
+{% endif %}
 {% endblock %}

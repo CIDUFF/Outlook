@@ -82,6 +82,8 @@ urlpatterns = [
          views.activity_update, name='activity_update'),
     path('atividades/<uuid:pk>/deletar/',
          views.activity_delete, name='activity_delete'),
+    path('api/atividades/<uuid:pk>/mover/',
+         views.activity_move, name='activity_move'),
     # Fluxo de submissão e verificação
     path('atividades/<uuid:pk>/submeter/',
          views.activity_submit_completion, name='activity_submit_completion'),

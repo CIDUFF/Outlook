@@ -186,21 +186,28 @@
     {% if stages %}
     <div class="bg-white rounded-lg shadow p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900">Etapas</h2>
+            <h2 class="text-xl font-bold text-gray-900">
+                Etapas
+                {% if is_manager %}
+                <span class="text-sm font-normal text-gray-500 ml-2">
+                    <i class="fas fa-arrows-alt mr-1"></i>Arraste as atividades para reorganizar
+                </span>
+                {% endif %}
+            </h2>
             {% if is_manager %}
             <a href="{% url 'prospecta:stage_create' opportunity.pk %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
                 <i class="fas fa-plus mr-1"></i>Nova Etapa
             </a>
             {% endif %}
         </div>
-        <div class="space-y-4">
+        <div class="space-y-4" id="stages-container">
             {% for stage in stages %}
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition stage-container" data-stage-id="{{ stage.pk }}">
                 <div class="flex justify-between items-start mb-3">
                     <div class="flex-1">
                         <h3 class="font-semibold text-gray-900 text-lg">#{{ stage.order }} {{ stage.name }}</h3>
                         <div class="flex items-center gap-4 text-sm text-gray-600">
-                            <span>{{ stage.activities.count }} atividade(s)</span>
+                            <span class="activity-count">{{ stage.activities.count }} atividade(s)</span>
                             {% if stage.responsible_user %}
                             <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                                 <i class="fas fa-user-tie mr-1"></i>{{ stage.responsible_user.get_full_name|default:stage.responsible_user.username }}
@@ -220,33 +227,44 @@
                     {% endif %}
                 </div>
                 
-                <!-- Activities in this stage -->
-                {% if stage.activities.all %}
-                <div class="bg-gray-50 rounded-lg p-3 mb-3 space-y-2">
+                <!-- Activities in this stage - Drop Zone -->
+                <div class="bg-gray-50 rounded-lg p-3 mb-3 space-y-2 min-h-[60px] activities-dropzone transition-all duration-200" 
+                     data-stage-id="{{ stage.pk }}"
+                     data-stage-name="{{ stage.name }}">
                     {% for activity in stage.activities.all %}
-                    <div class="bg-white p-2 rounded border border-gray-200">
+                    <div class="bg-white p-2 rounded border border-gray-200 activity-card {% if is_manager %}cursor-move hover:shadow-lg hover:border-blue-300{% endif %}"
+                         {% if is_manager %}draggable="true"{% endif %}
+                         data-activity-id="{{ activity.pk }}"
+                         data-activity-title="{{ activity.title }}">
                         <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
-                                    <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded font-medium">
-                                        {{ activity.get_activity_type_display }}
-                                    </span>
-                                </div>
-                                <p class="text-xs text-gray-600">
-                                    Atribuída para: {{ activity.assigned_to.get_full_name|default:"Não atribuída" }}
-                                    {% if activity.expected_date %}
-                                    <span class="ml-2 text-gray-500">
-                                        <i class="fas fa-calendar-alt mr-1"></i>{{ activity.expected_date|date:"d/m/Y" }}
-                                    </span>
-                                    {% endif %}
-                                </p>
-                                {% if activity.meeting %}
-                                <div class="mt-1 flex items-center gap-2 text-xs text-pink-600">
-                                    <i class="fas fa-calendar"></i>
-                                    <span>Reunião: <strong>{{ activity.meeting.title }}</strong></span>
+                            <div class="flex-1 flex items-center gap-2">
+                                {% if is_manager %}
+                                <div class="drag-handle text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-grip-vertical"></i>
                                 </div>
                                 {% endif %}
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
+                                        <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded font-medium">
+                                            {{ activity.get_activity_type_display }}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-gray-600">
+                                        Atribuída para: {{ activity.assigned_to.get_full_name|default:"Não atribuída" }}
+                                        {% if activity.expected_date %}
+                                        <span class="ml-2 text-gray-500">
+                                            <i class="fas fa-calendar-alt mr-1"></i>{{ activity.expected_date|date:"d/m/Y" }}
+                                        </span>
+                                        {% endif %}
+                                    </p>
+                                    {% if activity.meeting %}
+                                    <div class="mt-1 flex items-center gap-2 text-xs text-pink-600">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>Reunião: <strong>{{ activity.meeting.title }}</strong></span>
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="flex gap-1">
                                 {% if activity.status == 'concluida' %}
@@ -272,9 +290,12 @@
                             </div>
                         </div>
                     </div>
+                    {% empty %}
+                    <div class="empty-state text-center py-4 text-gray-400 text-sm">
+                        <i class="fas fa-inbox mr-1"></i>Arraste atividades para esta etapa
+                    </div>
                     {% endfor %}
                 </div>
-                {% endif %}
 
                 {% if is_manager %}
                 <a href="{% url 'prospecta:activity_create' stage.pk %}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
@@ -409,4 +430,218 @@
     <!-- Modal para Adicionar Participante -->
     {% include 'prospecta/components/add_participant_modal.html' %}
 </div>
+
+{% if is_manager %}
+<!-- Drag and Drop JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activityCards = document.querySelectorAll('.activity-card[draggable="true"]');
+    const dropzones = document.querySelectorAll('.activities-dropzone');
+    let draggedElement = null;
+    let sourceDropzone = null;
+
+    // Estilos para drag
+    const dragStyles = {
+        dragging: 'opacity-50 scale-105 shadow-2xl border-blue-500 rotate-2',
+        dropzoneHover: 'bg-blue-100 border-2 border-dashed border-blue-400 scale-[1.02]',
+        dropzoneActive: 'ring-2 ring-blue-400 ring-opacity-50'
+    };
+
+    // Eventos de Drag para as atividades
+    activityCards.forEach(card => {
+        card.addEventListener('dragstart', function(e) {
+            draggedElement = this;
+            sourceDropzone = this.closest('.activities-dropzone');
+            
+            // Adicionar classe de arrasto
+            setTimeout(() => {
+                this.classList.add(...dragStyles.dragging.split(' '));
+            }, 0);
+            
+            // Definir dados do drag
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.activityId);
+            
+            // Destacar todas as dropzones possíveis
+            dropzones.forEach(dz => {
+                if (dz !== sourceDropzone) {
+                    dz.classList.add(dragStyles.dropzoneActive);
+                }
+            });
+        });
+
+        card.addEventListener('dragend', function(e) {
+            // Remover classe de arrasto
+            this.classList.remove(...dragStyles.dragging.split(' '));
+            
+            // Remover destaque das dropzones
+            dropzones.forEach(dz => {
+                dz.classList.remove(dragStyles.dropzoneActive);
+                dz.classList.remove(...dragStyles.dropzoneHover.split(' '));
+            });
+            
+            draggedElement = null;
+            sourceDropzone = null;
+        });
+    });
+
+    // Eventos de Drop para as zonas de etapas
+    dropzones.forEach(dropzone => {
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            if (this !== sourceDropzone) {
+                this.classList.add(...dragStyles.dropzoneHover.split(' '));
+            }
+        });
+
+        dropzone.addEventListener('dragleave', function(e) {
+            // Verificar se realmente saiu da dropzone
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove(...dragStyles.dropzoneHover.split(' '));
+            }
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove(...dragStyles.dropzoneHover.split(' '));
+            
+            if (!draggedElement || this === sourceDropzone) return;
+
+            const activityId = e.dataTransfer.getData('text/plain');
+            const newStageId = this.dataset.stageId;
+            const newStageName = this.dataset.stageName;
+            const activityTitle = draggedElement.dataset.activityTitle;
+
+            // Mover visualmente primeiro para feedback imediato
+            const emptyState = this.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            this.appendChild(draggedElement);
+
+            // Atualizar contador da etapa de origem
+            updateActivityCount(sourceDropzone);
+            
+            // Atualizar contador da etapa de destino
+            updateActivityCount(this);
+
+            // Chamar API para persistir a mudança
+            moveActivity(activityId, newStageId, activityTitle, newStageName, sourceDropzone, this);
+        });
+    });
+
+    function updateActivityCount(dropzone) {
+        const stageContainer = dropzone.closest('.stage-container');
+        const countElement = stageContainer.querySelector('.activity-count');
+        const activityCount = dropzone.querySelectorAll('.activity-card').length;
+        countElement.textContent = `${activityCount} atividade(s)`;
+        
+        // Adicionar/remover empty state
+        const emptyState = dropzone.querySelector('.empty-state');
+        if (activityCount === 0 && !emptyState) {
+            const newEmptyState = document.createElement('div');
+            newEmptyState.className = 'empty-state text-center py-4 text-gray-400 text-sm';
+            newEmptyState.innerHTML = '<i class="fas fa-inbox mr-1"></i>Arraste atividades para esta etapa';
+            dropzone.appendChild(newEmptyState);
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function moveActivity(activityId, newStageId, activityTitle, newStageName, sourceDropzone, targetDropzone) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                          document.querySelector('meta[name="csrf-token"]')?.content ||
+                          getCookie('csrftoken');
+
+        fetch(`/api/atividades/${activityId}/mover/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ stage_id: newStageId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar notificação de sucesso
+                showNotification(`✓ "${activityTitle}" movida para "${newStageName}"`, 'success');
+            } else {
+                // Reverter se houver erro
+                showNotification(`✕ Erro: ${data.error}`, 'error');
+                revertMove(sourceDropzone, targetDropzone, activityId);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao mover atividade:', error);
+            showNotification('✕ Erro ao mover atividade', 'error');
+            revertMove(sourceDropzone, targetDropzone, activityId);
+        });
+    }
+
+    function revertMove(sourceDropzone, targetDropzone, activityId) {
+        const card = targetDropzone.querySelector(`[data-activity-id="${activityId}"]`);
+        if (card && sourceDropzone) {
+            sourceDropzone.appendChild(card);
+            updateActivityCount(sourceDropzone);
+            updateActivityCount(targetDropzone);
+        }
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-full opacity-0 ${
+            type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`;
+        notification.innerHTML = message;
+        document.body.appendChild(notification);
+
+        // Animar entrada
+        requestAnimationFrame(() => {
+            notification.classList.remove('translate-y-full', 'opacity-0');
+        });
+
+        // Remover após 3 segundos
+        setTimeout(() => {
+            notification.classList.add('translate-y-full', 'opacity-0');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+});
+</script>
+
+<style>
+/* Estilos adicionais para drag and drop */
+.activity-card {
+    transition: all 0.2s ease;
+}
+.activity-card[draggable="true"]:hover {
+    transform: translateY(-2px);
+}
+.activities-dropzone {
+    transition: all 0.2s ease;
+}
+.drag-handle {
+    cursor: grab;
+}
+.drag-handle:active {
+    cursor: grabbing;
+}
+</style>
+{% endif %}
 {% endblock %}

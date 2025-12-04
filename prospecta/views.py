@@ -1253,6 +1253,69 @@ def activity_delete(request, pk):
     return render(request, 'prospecta/activities/confirm_delete.html', context)
 
 
+@login_required(login_url='account_login')
+@role_required('admin', 'gerente')
+def activity_move(request, pk):
+    """
+    Move uma atividade de uma etapa para outra.
+    Endpoint AJAX para drag and drop.
+    """
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método não permitido'}, status=405)
+    
+    activity = get_object_or_404(Activity, pk=pk)
+    old_stage = activity.stage
+    
+    # Obter a nova etapa do POST
+    import json
+    try:
+        data = json.loads(request.body)
+        new_stage_id = data.get('stage_id')
+    except json.JSONDecodeError:
+        new_stage_id = request.POST.get('stage_id')
+    
+    if not new_stage_id:
+        return JsonResponse({'success': False, 'error': 'ID da etapa não fornecido'}, status=400)
+    
+    try:
+        new_stage = Stage.objects.get(pk=new_stage_id)
+    except Stage.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Etapa não encontrada'}, status=404)
+    
+    # Verificar se a nova etapa pertence à mesma oportunidade
+    if old_stage.opportunity != new_stage.opportunity:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Não é possível mover atividade para etapa de outra oportunidade'
+        }, status=400)
+    
+    # Se a etapa é a mesma, não fazer nada
+    if old_stage.pk == new_stage.pk:
+        return JsonResponse({'success': True, 'message': 'Atividade já está nesta etapa'})
+    
+    # Mover a atividade
+    activity.stage = new_stage
+    activity.save()
+    
+    # Registrar no histórico
+    ActivityHistory.objects.create(
+        activity=activity,
+        changed_by=request.user,
+        change_type='movimentacao',
+        change_details=f'Atividade movida de "{old_stage.name}" para "{new_stage.name}" por {request.user.get_full_name()}'
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Atividade movida para {new_stage.name}',
+        'old_stage': str(old_stage.pk),
+        'new_stage': str(new_stage.pk),
+        'activity_title': activity.title
+    })
+
+
 # ============================================================================
 # FLUXO DE SUBMISSÃO E VERIFICAÇÃO DE ATIVIDADES
 # ============================================================================
