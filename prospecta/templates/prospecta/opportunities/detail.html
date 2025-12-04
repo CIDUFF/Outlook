@@ -233,7 +233,14 @@
                                         {{ activity.get_activity_type_display }}
                                     </span>
                                 </div>
-                                <p class="text-xs text-gray-600">Atribuída para: {{ activity.assigned_to.get_full_name|default:"Não atribuída" }}</p>
+                                <p class="text-xs text-gray-600">
+                                    Atribuída para: {{ activity.assigned_to.get_full_name|default:"Não atribuída" }}
+                                    {% if activity.expected_date %}
+                                    <span class="ml-2 text-gray-500">
+                                        <i class="fas fa-calendar-alt mr-1"></i>{{ activity.expected_date|date:"d/m/Y" }}
+                                    </span>
+                                    {% endif %}
+                                </p>
                                 {% if activity.meeting %}
                                 <div class="mt-1 flex items-center gap-2 text-xs text-pink-600">
                                     <i class="fas fa-calendar"></i>
