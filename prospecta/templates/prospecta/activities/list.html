@@ -97,7 +97,14 @@
                                 <i class="fas fa-layer-group text-purple-600"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">{{ stage_data.stage.name }}</h3>
+                                <div class="flex items-center gap-3">
+                                    <h3 class="font-semibold text-gray-900">{{ stage_data.stage.name }}</h3>
+                                    {% if stage_data.stage.responsible_user %}
+                                    <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                                        <i class="fas fa-user-tie mr-1"></i>{{ stage_data.stage.responsible_user.get_full_name|default:stage_data.stage.responsible_user.username }}
+                                    </span>
+                                    {% endif %}
+                                </div>
                                 <p class="text-xs text-gray-500">Etapa {{ stage_data.stage.order }}</p>
                             </div>
                         </div>
