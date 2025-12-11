@@ -1,4 +1,5 @@
 {% extends 'prospecta/base.html' %}
+{% load custom_filters %}
 
 {% block title %}Deletar Oportunidade - PROSPECTA{% endblock %}
 
@@ -38,7 +39,7 @@
                     </div>
                     <div>
                         <dt class="text-gray-500">Valor</dt>
-                        <dd class="font-medium text-gray-900">R$ {{ opportunity.value_brl|floatformat:2|default:"N/A" }}</dd>
+                        <dd class="font-medium text-gray-900">{{ opportunity.value_brl|format_millions|default:"N/A" }}</dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Responsável</dt>

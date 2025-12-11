@@ -246,7 +246,7 @@
                                         <div class="text-xs text-gray-500">{{ opp.client.name }}</div>
                                     </td>
                                     <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                                        {{ opp.value_brl|format_currency }}
+                                        {{ opp.value_brl|format_millions }}
                                     </td>
                                     <td class="px-6 py-4 text-sm">
                                         {% if opp.status == 'aberta' %}
@@ -361,7 +361,7 @@
                             </div>
                             <div class="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>{{ item.percentage }}%</span>
-                                <span>R$ {{ item.value|floatformat:0|stringformat:",.0f" }}</span>
+                                <span>{{ item.value|format_millions }}</span>
                             </div>
                         </div>
                         {% endfor %}

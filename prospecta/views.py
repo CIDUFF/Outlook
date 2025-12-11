@@ -329,10 +329,17 @@ def opportunity_create(request):
     context = get_user_context(request.user)
 
     if request.method == 'POST':
-        # Tratar valor decimal vazio
+        # Tratar valor decimal vazio - valor é inserido em milhões (MM)
         value_brl = request.POST.get('value_brl')
-        if value_brl == '':
+        if value_brl == '' or value_brl is None:
             value_brl = None
+        else:
+            try:
+                # Converter de milhões para valor real
+                from decimal import Decimal
+                value_brl = Decimal(value_brl) * Decimal('1000000')
+            except:
+                value_brl = None
 
         # Tratar estagio e fase vazios
         estagio = request.POST.get('estagio') or None
@@ -479,16 +486,16 @@ def opportunity_update(request, pk):
     opportunity = get_object_or_404(Opportunity, pk=pk)
 
     if request.method == 'POST':
-        # Tratar valor decimal - manter valor original se não for fornecido
+        # Tratar valor decimal - valor é inserido em milhões (MM)
         value_brl = request.POST.get('value_brl', '').strip()
         if value_brl == '':
             # Manter o valor original se o campo estiver vazio
             value_brl = opportunity.value_brl
         else:
-            # Converter para Decimal se um valor foi fornecido
+            # Converter de milhões para valor real
             try:
                 from decimal import Decimal
-                value_brl = Decimal(value_brl)
+                value_brl = Decimal(value_brl) * Decimal('1000000')
             except:
                 value_brl = opportunity.value_brl
 

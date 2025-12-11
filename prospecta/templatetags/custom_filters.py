@@ -77,6 +77,54 @@ def format_currency(value):
 
 
 @register.filter
+def format_millions(value):
+    """
+    Formata valor em milhões (MM) como moeda brasileira.
+    Uso: {{ amount|format_millions }}
+    Resultado: R$ 1,50 MM (para 1.500.000)
+    Se o valor for menor que 1 milhão, exibe em milhares (mil)
+    """
+    if value is None or value == '':
+        return '-'
+
+    try:
+        # Converter para float
+        amount = float(value)
+        
+        if amount == 0:
+            return '-'
+        
+        # Valor em milhões
+        millions = amount / 1_000_000
+        
+        # Formatar com 2 casas decimais
+        formatted = f'{millions:,.2f}'.replace(',', '|').replace('.', ',').replace('|', '.')
+        return f'R$ {formatted} MM'
+    except (ValueError, TypeError):
+        return '-'
+
+
+@register.filter
+def format_millions_input(value):
+    """
+    Formata valor para exibição em input (apenas o número em milhões).
+    Uso: {{ amount|format_millions_input }}
+    Resultado: 1.50 (para 1.500.000)
+    """
+    if value is None or value == '':
+        return ''
+
+    try:
+        amount = float(value)
+        if amount == 0:
+            return ''
+        # Retorna o valor em milhões com 2 casas decimais
+        return f'{amount / 1_000_000:.2f}'
+    except (ValueError, TypeError):
+        return ''
+
+
+@register.filter
 def sum_values(queryset):
     """
     Soma os valores de um queryset de OpportunityCustomValue.

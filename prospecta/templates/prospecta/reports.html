@@ -1,4 +1,5 @@
 {% extends 'prospecta/base.html' %}
+{% load custom_filters %}
 
 {% block title %}Relatórios - PROSPECTA{% endblock %}
 
@@ -68,7 +69,7 @@
                 <i class="fas fa-coins text-blue-600 mr-2"></i>Pipeline Total
             </h3>
             <p class="text-5xl font-bold text-blue-600">
-                R$ {{ total_value|floatformat:0 }}
+                {{ total_value|format_millions }}
             </p>
             <p class="text-gray-600 mt-4 text-sm">Valor total de todas as oportunidades</p>
         </div>
@@ -78,7 +79,7 @@
                 <i class="fas fa-trophy text-green-600 mr-2"></i>Valor Ganho
             </h3>
             <p class="text-5xl font-bold text-green-600">
-                R$ {{ won_value|floatformat:0 }}
+                {{ won_value|format_millions }}
             </p>
             <p class="text-gray-600 mt-4 text-sm">Valor de oportunidades ganhas</p>
         </div>
@@ -110,7 +111,7 @@
             <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-6">
                 <p class="text-gray-600 text-sm font-medium mb-2">Ticket Médio</p>
                 <p class="text-3xl font-bold text-yellow-600">
-                    R$ {{ average_value|floatformat:0 }}
+                    {{ average_value|format_millions }}
                 </p>
                 <p class="text-xs text-gray-600 mt-2">Valor médio por oportunidade</p>
             </div>
