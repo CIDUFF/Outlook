@@ -298,6 +298,14 @@ def opportunities_list(request):
     if client_id:
         opportunities = opportunities.filter(client_id=client_id)
 
+    estagio = request.GET.get('estagio')
+    if estagio:
+        opportunities = opportunities.filter(estagio=estagio)
+
+    fase = request.GET.get('fase')
+    if fase:
+        opportunities = opportunities.filter(fase=fase)
+
     # Ordenação
     sort = request.GET.get('sort', '-created_at')
     opportunities = opportunities.order_by(sort)
@@ -307,6 +315,8 @@ def opportunities_list(request):
         'clients': Client.objects.all(),
         'status_choices': Opportunity.STATUS_CHOICES,
         'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
+        'estagio_choices': Opportunity.ESTAGIO_CHOICES,
+        'fase_choices': Opportunity.FASE_CHOICES,
     })
 
     return render(request, 'prospecta/opportunities/list.html', context)
@@ -617,6 +627,18 @@ def opportunities_filter(request):
     status = request.GET.get('status')
     if status:
         opportunities = opportunities.filter(status=status)
+
+    client_id = request.GET.get('client')
+    if client_id:
+        opportunities = opportunities.filter(client_id=client_id)
+
+    estagio = request.GET.get('estagio')
+    if estagio:
+        opportunities = opportunities.filter(estagio=estagio)
+
+    fase = request.GET.get('fase')
+    if fase:
+        opportunities = opportunities.filter(fase=fase)
 
     return render(request, 'prospecta/components/opportunities_table.html', {
         'opportunities': opportunities,

@@ -20,10 +20,10 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow p-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Status</label>
-                <select hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" hx-include="[name='status'], [name='client'], [name='estagio'], [name='fase']" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">Todos os status</option>
                     {% for status_obj in opportunity_statuses %}
                     <option value="{{ status_obj.slug }}">{{ status_obj.name }}</option>
@@ -37,10 +37,30 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Empresa</label>
-                <select name="client" hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select name="client" hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" hx-include="[name='status'], [name='client'], [name='estagio'], [name='fase']" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">Todas as empresas</option>
                     {% for client in clients %}
                     <option value="{{ client.pk }}">{{ client.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Estágio</label>
+                <select name="estagio" hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" hx-include="[name='status'], [name='client'], [name='estagio'], [name='fase']" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Todos os estágios</option>
+                    {% for value, label in estagio_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Fase</label>
+                <select name="fase" hx-get="{% url 'prospecta:opportunities_filter' %}" hx-target="#opportunities-table" hx-trigger="change" hx-include="[name='status'], [name='client'], [name='estagio'], [name='fase']" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Todas as fases</option>
+                    {% for value, label in fase_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
