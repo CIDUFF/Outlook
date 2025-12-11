@@ -186,7 +186,7 @@
             <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg shadow-md p-6 border border-blue-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-medium">Oportunidades Abertas</p>
+                        <p class="text-gray-600 text-sm font-medium">Oportunidades Ativas</p>
                         <p class="text-2xl font-bold text-blue-900 mt-1">{{ open_opportunities }}</p>
                         <p class="text-xs text-blue-600 mt-1">Novas leads</p>
                     </div>
@@ -251,12 +251,14 @@
                                     <td class="px-6 py-4 text-sm">
                                         {% if opp.status == 'aberta' %}
                                             <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Aberta</span>
-                                        {% elif opp.status == 'em_andamento' %}
-                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Em Progresso</span>
+                                        {% elif opp.status == 'atrasada' %}
+                                            <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">Atrasada</span>
                                         {% elif opp.status == 'ganha' %}
                                             <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Ganha</span>
                                         {% elif opp.status == 'perdida' %}
                                             <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Perdida</span>
+                                        {% elif opp.status == 'suspensa' %}
+                                            <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">Suspensa</span>
                                         {% else %}
                                             <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Cancelada</span>
                                         {% endif %}
@@ -346,10 +348,12 @@
                                 <div class="bg-gradient-to-r 
                                     {% if item.status == 'Aberta' %}
                                         from-blue-400 to-blue-600
-                                    {% elif item.status == 'Em Andamento' %}
-                                        from-yellow-400 to-yellow-600
+                                    {% elif item.status == 'Atrasada' %}
+                                        from-orange-400 to-orange-600
                                     {% elif item.status == 'Ganha' %}
                                         from-green-400 to-green-600
+                                    {% elif item.status == 'Suspensa' %}
+                                        from-purple-400 to-purple-600
                                     {% else %}
                                         from-red-400 to-red-600
                                     {% endif %}

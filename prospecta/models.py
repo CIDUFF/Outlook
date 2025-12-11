@@ -199,9 +199,10 @@ class Opportunity(models.Model):
     """Oportunidades de venda"""
     STATUS_CHOICES = [
         ('aberta', 'Aberta'),
-        ('em_andamento', 'Em Andamento'),
+        ('atrasada', 'Atrasada'),
         ('ganha', 'Ganha'),
         ('perdida', 'Perdida'),
+        ('suspensa', 'Suspensa'),
         ('cancelada', 'Cancelada'),
     ]
 

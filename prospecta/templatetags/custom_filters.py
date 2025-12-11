@@ -130,9 +130,10 @@ def opportunity_status_badge(opportunity, opportunity_statuses=None):
     # Fallback para status padrão (hardcoded)
     status_mapping = {
         'aberta': ('blue', 'Aberta', 'fa-folder-open'),
-        'em_andamento': ('yellow', 'Em Andamento', 'fa-spinner'),
+        'atrasada': ('orange', 'Atrasada', 'fa-clock'),
         'ganha': ('green', 'Ganha', 'fa-trophy'),
         'perdida': ('red', 'Perdida', 'fa-times-circle'),
+        'suspensa': ('purple', 'Suspensa', 'fa-pause'),
         'cancelada': ('gray', 'Cancelada', 'fa-ban'),
     }
     
@@ -161,9 +162,10 @@ def get_status_display(status_value, opportunity_statuses=None):
     # Fallback para status padrão
     status_mapping = {
         'aberta': 'Aberta',
-        'em_andamento': 'Em Andamento',
+        'atrasada': 'Atrasada',
         'ganha': 'Ganha',
         'perdida': 'Perdida',
+        'suspensa': 'Suspensa',
         'cancelada': 'Cancelada',
     }
     

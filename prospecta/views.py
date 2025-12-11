@@ -86,7 +86,7 @@ def home(request):
         context.update({
             'total_opportunities': Opportunity.objects.count(),
             'total_clients': Client.objects.count(),
-            'open_opportunities': Opportunity.objects.filter(status='aberta').count(),
+            'open_opportunities': Opportunity.objects.filter(status__in=['em_andamento', 'atrasada']).count(),
             'my_activities': Activity.objects.filter(
                 assigned_to=request.user,
                 status='pendente'
@@ -128,18 +128,20 @@ def dashboard(request):
 
     # KPIs - Oportunidades
     total_opportunities = opportunities.count()
-    open_opportunities = opportunities.filter(status='aberta').count()
-    in_progress_opportunities = opportunities.filter(
-        status='em_andamento').count()
+    open_opportunities_count = opportunities.filter(
+        status='aberta').count()
+    delayed_opportunities = opportunities.filter(status='atrasada').count()
     won_opportunities = opportunities.filter(status='ganha').count()
     lost_opportunities = opportunities.filter(status='perdida').count()
+    suspended_opportunities = opportunities.filter(status='suspensa').count()
+    canceled_opportunities = opportunities.filter(status='cancelada').count()
 
     # Valores
     total_pipeline = opportunities.aggregate(
         Sum('value_brl'))['value_brl__sum'] or 0
     won_value = opportunities.filter(status='ganha').aggregate(
         Sum('value_brl'))['value_brl__sum'] or 0
-    in_progress_value = opportunities.filter(status='em_andamento').aggregate(
+    active_value = opportunities.filter(status__in=['aberta', 'atrasada']).aggregate(
         Sum('value_brl'))['value_brl__sum'] or 0
 
     # Taxa de conversão
@@ -170,10 +172,12 @@ def dashboard(request):
 
     # Status do pipeline (por status)
     pipeline_by_status = {
-        'aberta': open_opportunities,
-        'em_andamento': in_progress_opportunities,
+        'aberta': open_opportunities_count,
+        'atrasada': delayed_opportunities,
         'ganha': won_opportunities,
         'perdida': lost_opportunities,
+        'suspensa': suspended_opportunities,
+        'cancelada': canceled_opportunities,
     }
 
     # Dados para gráfico de distribuição
@@ -192,10 +196,14 @@ def dashboard(request):
     context.update({
         # Contagens
         'total_opportunities': total_opportunities,
-        'open_opportunities': open_opportunities,
-        'in_progress_opportunities': in_progress_opportunities,
+        'open_opportunities': open_opportunities_count + delayed_opportunities,
+        'open_opportunities_count': open_opportunities_count,
+        'in_progress_value': active_value,
+        'delayed_opportunities': delayed_opportunities,
         'won_opportunities': won_opportunities,
         'lost_opportunities': lost_opportunities,
+        'suspended_opportunities': suspended_opportunities,
+        'canceled_opportunities': canceled_opportunities,
         'opportunities_count': total_opportunities,
 
         # Valores
@@ -860,7 +868,7 @@ def reports(request):
     total_opp = opportunities.count()
     won_opp = opportunities.filter(status='ganha').count()
     lost_opp = opportunities.filter(status='perdida').count()
-    open_opp = opportunities.filter(status='aberta').count()
+    open_opp = opportunities.filter(status__in=['aberta', 'atrasada']).count()
 
     # Valores
     total_value = opportunities.aggregate(Sum('value_brl'))[
@@ -1044,11 +1052,11 @@ def activity_create_standalone(request):
     # Obter oportunidades com suas etapas
     if context.get('is_admin') or context.get('is_manager'):
         opportunities = Opportunity.objects.filter(
-            status__in=['aberta', 'em_andamento']
+            status__in=['aberta', 'atrasada', 'suspensa']
         ).select_related('client', 'responsible_user').prefetch_related('stages')
     else:
         opportunities = Opportunity.objects.filter(
-            status__in=['aberta', 'em_andamento'],
+            status__in=['aberta', 'atrasada', 'suspensa'],
             responsible_user=request.user
         ).select_related('client', 'responsible_user').prefetch_related('stages')
 
