@@ -8,7 +8,12 @@
     <div class="flex justify-between items-center">
         <div>
             <h1 class="text-4xl font-bold text-gray-900">{{ client.name }}</h1>
-            <p class="text-gray-600 mt-2">CNPJ: <span class="font-semibold">{{ client.cnpj }}</span></p>
+            {% if client.razao_social %}
+            <p class="text-gray-600 mt-1">Razão Social: <span class="font-semibold">{{ client.razao_social }}</span></p>
+            {% endif %}
+            {% if client.cnpj %}
+            <p class="text-gray-600 mt-1">CNPJ: <span class="font-semibold">{{ client.cnpj }}</span></p>
+            {% endif %}
         </div>
         {% if is_manager %}
         <a href="{% url 'prospecta:client_update' pk=client.pk %}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium">

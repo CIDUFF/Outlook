@@ -709,7 +709,7 @@ def clients_list(request):
     search = request.GET.get('search')
     if search:
         clients = clients.filter(
-            Q(name__icontains=search) | Q(
+            Q(name__icontains=search) | Q(razao_social__icontains=search) | Q(
                 cnpj__icontains=search) | Q(email__icontains=search)
         )
 
@@ -726,7 +726,8 @@ def client_create(request):
     if request.method == 'POST':
         client = Client(
             name=request.POST['name'],
-            cnpj=request.POST['cnpj'],
+            razao_social=request.POST.get('razao_social', '') or None,
+            cnpj=request.POST.get('cnpj', '') or None,
             address=request.POST.get('address', ''),
             phone=request.POST.get('phone', ''),
             email=request.POST.get('email', ''),
@@ -770,7 +771,8 @@ def client_update(request, pk):
 
     if request.method == 'POST':
         client.name = request.POST['name']
-        client.cnpj = request.POST['cnpj']
+        client.razao_social = request.POST.get('razao_social', '') or None
+        client.cnpj = request.POST.get('cnpj', '') or None
         client.address = request.POST.get('address', '')
         client.phone = request.POST.get('phone', '')
         client.email = request.POST.get('email', '')

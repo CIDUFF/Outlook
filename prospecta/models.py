@@ -134,7 +134,8 @@ class Client(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,
                           editable=False, verbose_name='ID')
     name = models.CharField(max_length=255, verbose_name='Nome')
-    cnpj = models.CharField(max_length=18, unique=True, verbose_name='CNPJ')
+    razao_social = models.CharField(max_length=255, blank=True, null=True, verbose_name='Razão Social')
+    cnpj = models.CharField(max_length=18, blank=True, null=True, verbose_name='CNPJ')
     address = models.TextField(blank=True, null=True, verbose_name='Endereço')
     phone = models.CharField(max_length=20, blank=True,
                              null=True, verbose_name='Telefone')
