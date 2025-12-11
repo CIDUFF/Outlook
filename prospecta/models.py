@@ -206,6 +206,23 @@ class Opportunity(models.Model):
         ('cancelada', 'Cancelada'),
     ]
 
+    ESTAGIO_CHOICES = [
+        ('outlook', 'Outlook'),
+        ('proposta', 'Proposta'),
+        ('projeto', 'Projeto'),
+    ]
+
+    FASE_CHOICES = [
+        ('lead_contato_inicial', 'Lead/Contato inicial'),
+        ('qualificacao', 'Qualificação'),
+        ('diagnostico_entendimento', 'Diagnóstico/Entendimento do Escopo'),
+        ('desenho_solucao', 'Desenho da Solução/Pré-proposta'),
+        ('proposta_enviada', 'Proposta Enviada'),
+        ('negociacao_ajustes', 'Negociação/Ajustes'),
+        ('acordo_verbal', 'Acordo Verbal/Intenção de Fechar'),
+        ('projeto_fechado', 'Projeto Fechado'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4,
                           editable=False, verbose_name='ID')
     title = models.CharField(max_length=255, verbose_name='Título')
@@ -233,6 +250,10 @@ class Opportunity(models.Model):
         blank=True, null=True, verbose_name='Data de Entrega')
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='aberta', verbose_name='Status')
+    estagio = models.CharField(
+        max_length=20, choices=ESTAGIO_CHOICES, blank=True, null=True, verbose_name='Estágio')
+    fase = models.CharField(
+        max_length=50, choices=FASE_CHOICES, blank=True, null=True, verbose_name='Fase')
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(

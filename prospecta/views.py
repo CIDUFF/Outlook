@@ -324,6 +324,10 @@ def opportunity_create(request):
         if value_brl == '':
             value_brl = None
 
+        # Tratar estagio e fase vazios
+        estagio = request.POST.get('estagio') or None
+        fase = request.POST.get('fase') or None
+
         opportunity = Opportunity(
             title=request.POST['title'],
             description=request.POST.get('description', ''),
@@ -335,6 +339,8 @@ def opportunity_create(request):
                 'responsible_user', request.user.id),
             sales_model_id=request.POST.get('sales_model'),
             value_brl=value_brl,
+            estagio=estagio,
+            fase=fase,
             expected_delivery_date=request.POST.get(
                 'expected_delivery_date') or None,
         )
@@ -401,6 +407,8 @@ def opportunity_create(request):
         'sales_models': SalesModel.objects.all(),
         'users': User.objects.filter(profile__is_active=True),
         'selected_client': request.GET.get('client', ''),
+        'estagio_choices': Opportunity.ESTAGIO_CHOICES,
+        'fase_choices': Opportunity.FASE_CHOICES,
     })
 
     return render(request, 'prospecta/opportunities/form.html', context)
@@ -482,6 +490,8 @@ def opportunity_update(request, pk):
         opportunity.responsible_user_id = request.POST['responsible_user']
         opportunity.sales_model_id = request.POST.get('sales_model') or None
         opportunity.value_brl = value_brl
+        opportunity.estagio = request.POST.get('estagio') or None
+        opportunity.fase = request.POST.get('fase') or None
         opportunity.expected_delivery_date = request.POST.get(
             'expected_delivery_date') or None
         opportunity.status = request.POST.get('status', opportunity.status)
@@ -566,6 +576,8 @@ def opportunity_update(request, pk):
         'users': User.objects.filter(profile__is_active=True),
         'status_choices': Opportunity.STATUS_CHOICES,
         'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
+        'estagio_choices': Opportunity.ESTAGIO_CHOICES,
+        'fase_choices': Opportunity.FASE_CHOICES,
     })
 
     return render(request, 'prospecta/opportunities/form.html', context)
