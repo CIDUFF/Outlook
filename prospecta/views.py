@@ -198,7 +198,6 @@ def dashboard(request):
         'total_opportunities': total_opportunities,
         'open_opportunities': open_opportunities_count + delayed_opportunities,
         'open_opportunities_count': open_opportunities_count,
-        'in_progress_value': active_value,
         'delayed_opportunities': delayed_opportunities,
         'won_opportunities': won_opportunities,
         'lost_opportunities': lost_opportunities,
@@ -209,7 +208,7 @@ def dashboard(request):
         # Valores
         'total_pipeline': total_pipeline,
         'won_value': won_value,
-        'in_progress_value': in_progress_value,
+        'in_progress_value': active_value,
         'conversion_rate': round(conversion_rate, 1),
 
         # Atividades
@@ -1121,6 +1120,7 @@ def activity_create_standalone(request):
             stage=stage,
             title=request.POST['title'],
             description=request.POST.get('description', ''),
+            entregavel=request.POST.get('entregavel', ''),
             assigned_to_id=assigned_to_id,
             delegated_by=request.user,
             activity_type=request.POST.get('activity_type', 'tarefa'),
@@ -1173,6 +1173,7 @@ def activity_create(request, stage_pk):
             stage=stage,
             title=request.POST['title'],
             description=request.POST.get('description', ''),
+            entregavel=request.POST.get('entregavel', ''),
             assigned_to_id=assigned_to_id,
             delegated_by=request.user,
             activity_type=request.POST.get('activity_type', 'tarefa'),
@@ -1224,6 +1225,7 @@ def activity_update(request, pk):
 
         activity.title = request.POST['title']
         activity.description = request.POST.get('description', '')
+        activity.entregavel = request.POST.get('entregavel', '')
         activity.activity_type = request.POST.get(
             'activity_type', activity.activity_type)
         activity.start_date = request.POST.get('start_date') or None

@@ -370,6 +370,8 @@ class Activity(models.Model):
     meeting = models.ForeignKey(
         'Meeting', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='activities', verbose_name='Reunião Associada')
+    entregavel = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name='Entregável')
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(
