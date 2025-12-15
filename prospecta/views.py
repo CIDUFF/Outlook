@@ -421,7 +421,7 @@ def opportunity_create(request):
     context.update({
         'clients': Client.objects.all(),
         'sales_models': SalesModel.objects.all(),
-        'users': User.objects.filter(profile__is_active=True),
+        'users': User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name'),
         'selected_client': request.GET.get('client', ''),
         'estagio_choices': Opportunity.ESTAGIO_CHOICES,
         'fase_choices': Opportunity.FASE_CHOICES,
@@ -589,7 +589,7 @@ def opportunity_update(request, pk):
         'opportunity': opportunity,
         'clients': Client.objects.all(),
         'sales_models': SalesModel.objects.all(),
-        'users': User.objects.filter(profile__is_active=True),
+        'users': User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name'),
         'status_choices': Opportunity.STATUS_CHOICES,
         'opportunity_statuses': OpportunityStatus.objects.filter(is_active=True),
         'estagio_choices': Opportunity.ESTAGIO_CHOICES,
@@ -987,7 +987,7 @@ def stage_create(request, opportunity_pk):
         return redirect('prospecta:opportunity_detail', pk=opportunity.pk)
 
     context['opportunity'] = opportunity
-    context['users'] = User.objects.filter(profile__is_active=True)
+    context['users'] = User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name')
     return render(request, 'prospecta/stages/form.html', context)
 
 
@@ -1024,7 +1024,7 @@ def stage_update(request, pk):
 
     context = get_user_context(request.user)
     context['stage'] = stage
-    context['users'] = User.objects.filter(profile__is_active=True)
+    context['users'] = User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name')
     return render(request, 'prospecta/stages/form.html', context)
 
 
@@ -1108,7 +1108,7 @@ def activity_create_standalone(request):
             messages.error(request, 'Selecione uma etapa para a atividade.')
             context.update({
                 'opportunities': opportunities,
-                'users': User.objects.filter(profile__is_active=True),
+                'users': User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name'),
                 'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
             })
             return render(request, 'prospecta/activities/form_standalone.html', context)
@@ -1153,7 +1153,7 @@ def activity_create_standalone(request):
 
     context.update({
         'opportunities': opportunities,
-        'users': User.objects.filter(profile__is_active=True),
+        'users': User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name'),
         'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
     })
     return render(request, 'prospecta/activities/form_standalone.html', context)
@@ -1207,7 +1207,7 @@ def activity_create(request, stage_pk):
 
     context.update({
         'stage': stage,
-        'users': User.objects.filter(profile__is_active=True),
+        'users': User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name'),
         'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
     })
     return render(request, 'prospecta/activities/form.html', context)
@@ -1282,7 +1282,7 @@ def activity_update(request, pk):
     context = get_user_context(request.user)
     context.update({
         'activity': activity,
-        'users': User.objects.filter(profile__is_active=True),
+        'users': User.objects.filter(profile__is_active=True).order_by('first_name', 'last_name'),
         'status_choices': Activity.STATUS_CHOICES,
         'activity_type_choices': Activity.ACTIVITY_TYPE_CHOICES,
     })
@@ -1404,7 +1404,7 @@ def activity_submit_completion(request, pk):
             messages.error(request, 'As notas de conclusão são obrigatórias.')
             context.update({
                 'activity': activity,
-                'users': User.objects.filter(profile__is_active=True).exclude(id=request.user.id),
+                'users': User.objects.filter(profile__is_active=True).exclude(id=request.user.id).order_by('first_name', 'last_name'),
             })
             return render(request, 'prospecta/activities/submit_completion.html', context)
 
@@ -1412,7 +1412,7 @@ def activity_submit_completion(request, pk):
             messages.error(request, 'Você deve selecionar um verificador.')
             context.update({
                 'activity': activity,
-                'users': User.objects.filter(profile__is_active=True).exclude(id=request.user.id),
+                'users': User.objects.filter(profile__is_active=True).exclude(id=request.user.id).order_by('first_name', 'last_name'),
             })
             return render(request, 'prospecta/activities/submit_completion.html', context)
 
