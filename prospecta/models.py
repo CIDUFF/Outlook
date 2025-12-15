@@ -276,6 +276,10 @@ class Stage(models.Model):
     opportunity = models.ForeignKey(
         Opportunity, on_delete=models.CASCADE, related_name='stages', verbose_name='Oportunidade')
     name = models.CharField(max_length=255, verbose_name='Nome')
+    description = models.TextField(
+        blank=True, null=True, verbose_name='Descrição')
+    observation = models.TextField(
+        blank=True, null=True, verbose_name='Observação')
     order = models.IntegerField(verbose_name='Ordem')
     responsible_user = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,

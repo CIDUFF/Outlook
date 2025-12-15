@@ -969,6 +969,8 @@ def stage_create(request, opportunity_pk):
         stage = Stage(
             opportunity=opportunity,
             name=request.POST['name'],
+            description=request.POST.get('description', ''),
+            observation=request.POST.get('observation', ''),
             order=request.POST.get('order', 1),
             responsible_user_id=responsible_user_id if responsible_user_id else None,
             created_by=request.user,
@@ -1000,6 +1002,8 @@ def stage_update(request, pk):
     if request.method == 'POST':
         old_responsible = stage.responsible_user
         stage.name = request.POST['name']
+        stage.description = request.POST.get('description', '')
+        stage.observation = request.POST.get('observation', '')
         stage.order = request.POST.get('order', stage.order)
         responsible_user_id = request.POST.get('responsible_user')
         stage.responsible_user_id = responsible_user_id if responsible_user_id else None
