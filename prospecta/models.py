@@ -847,3 +847,74 @@ class OpportunityStatus(models.Model):
     def get_choices(cls):
         """Retorna choices para uso em formulários"""
         return [(s.slug, s.name) for s in cls.objects.filter(is_active=True)]
+
+
+# ============================================================================
+# REGISTROS DE HISTÓRICO DA EQUIPE
+# ============================================================================
+
+class StageRecord(models.Model):
+    """
+    Registros manuais de histórico documentados pela equipe.
+    Permite que membros da equipe registrem o que aconteceu em atividades ou etapas,
+    podendo incluir arquivos anexos.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False, verbose_name='ID')
+    stage = models.ForeignKey(
+        Stage, on_delete=models.CASCADE, related_name='records', verbose_name='Etapa')
+    activity = models.ForeignKey(
+        Activity, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='records', verbose_name='Atividade Relacionada',
+        help_text='Opcional: vincular a uma atividade específica da etapa')
+    title = models.CharField(max_length=255, verbose_name='Título')
+    description = models.TextField(verbose_name='Descrição',
+                                   help_text='Descreva o que aconteceu')
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True,
+        related_name='stage_records_created', verbose_name='Registrado por')
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Registrado em')
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name='Atualizado em')
+
+    class Meta:
+        db_table = 'tab_stage_records'
+        verbose_name = 'Registro de Histórico'
+        verbose_name_plural = 'Registros de Histórico'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.stage.name} - {self.title}"
+
+
+class StageRecordAttachment(models.Model):
+    """Anexos dos registros de histórico"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False, verbose_name='ID')
+    record = models.ForeignKey(
+        StageRecord, on_delete=models.CASCADE, related_name='attachments', verbose_name='Registro')
+    file = models.FileField(
+        upload_to='stage_records/attachments/', verbose_name='Arquivo')
+    filename = models.CharField(max_length=255, blank=True, verbose_name='Nome do Arquivo')
+    description = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name='Descrição')
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True,
+        related_name='stage_record_attachments_uploaded', verbose_name='Enviado por')
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Criado em')
+
+    class Meta:
+        db_table = 'tab_stage_record_attachments'
+        verbose_name = 'Anexo do Registro'
+        verbose_name_plural = 'Anexos dos Registros'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Anexo - {self.record.title}"
+
+    def save(self, *args, **kwargs):
+        if not self.filename and self.file:
+            self.filename = self.file.name.split('/')[-1]
+        super().save(*args, **kwargs)

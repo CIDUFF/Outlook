@@ -297,10 +297,70 @@
                     {% endfor %}
                 </div>
 
-                {% if is_manager %}
-                <a href="{% url 'prospecta:activity_create' stage.pk %}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                    <i class="fas fa-plus mr-1"></i>Adicionar Atividade
-                </a>
+                <!-- Ações da Etapa -->
+                <div class="flex items-center gap-3 mb-3">
+                    {% if can_write %}
+                    <a href="{% url 'prospecta:activity_create' stage.pk %}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <i class="fas fa-plus mr-1"></i>Adicionar Atividade
+                    </a>
+                    <span class="text-gray-300">|</span>
+                    <a href="{% url 'prospecta:stage_record_create' stage_pk=stage.pk %}" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                        <i class="fas fa-file-alt mr-1"></i>Registrar Histórico
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Registros de Histórico da Etapa -->
+                {% if stage.records.exists %}
+                <div class="mt-4 border-t border-gray-200 pt-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-history mr-1 text-emerald-600"></i>Histórico da Equipe ({{ stage.records.count }})
+                    </h4>
+                    <div class="space-y-2">
+                        {% for record in stage.records.all %}
+                        <div class="bg-emerald-50 border-l-4 border-emerald-500 rounded p-3">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-900">{{ record.title }}</p>
+                                    {% if record.activity %}
+                                    <p class="text-xs text-emerald-700 mt-1">
+                                        <i class="fas fa-link mr-1"></i>Atividade: {{ record.activity.title }}
+                                    </p>
+                                    {% endif %}
+                                    <p class="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{{ record.description|truncatewords:50 }}</p>
+                                    {% if record.attachments.exists %}
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        {% for attachment in record.attachments.all %}
+                                        <a href="{% url 'prospecta:stage_record_attachment_download' pk=attachment.pk %}" 
+                                           class="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-700 hover:bg-gray-50">
+                                            <i class="fas fa-paperclip text-gray-400"></i>
+                                            {{ attachment.filename|truncatechars:20 }}
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                        <span><i class="fas fa-user mr-1"></i>{{ record.created_by.get_full_name|default:"Sistema" }}</span>
+                                        <span><i class="fas fa-clock mr-1"></i>{{ record.created_at|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                </div>
+                                {% if can_write %}
+                                <div class="flex gap-1 ml-2">
+                                    <a href="{% url 'prospecta:stage_record_update' pk=record.pk %}" 
+                                       class="text-blue-600 hover:text-blue-700 text-xs" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'prospecta:stage_record_delete' pk=record.pk %}" 
+                                       class="text-red-600 hover:text-red-700 text-xs" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}

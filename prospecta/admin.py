@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Client, Contact, SalesModel, Opportunity, Stage, Activity,
     OpportunityHistory, StageHistory, ActivityHistory, UserProfile,
-    OpportunityDocument, ActivityAttachment, Meeting
+    OpportunityDocument, ActivityAttachment, Meeting,
+    StageRecord, StageRecordAttachment
 )
 
 
@@ -172,3 +173,43 @@ class MeetingAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+# ============================================================================
+# REGISTROS DE HISTÓRICO DA EQUIPE
+# ============================================================================
+
+class StageRecordAttachmentInline(admin.TabularInline):
+    model = StageRecordAttachment
+    extra = 0
+    readonly_fields = ('id', 'created_at', 'uploaded_by')
+    fields = ('file', 'filename', 'description', 'uploaded_by', 'created_at')
+
+
+@admin.register(StageRecord)
+class StageRecordAdmin(admin.ModelAdmin):
+    list_display = ('title', 'stage', 'activity', 'created_by', 'created_at')
+    search_fields = ('title', 'description', 'stage__name', 'stage__opportunity__title')
+    list_filter = ('created_at', 'stage__opportunity')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    inlines = [StageRecordAttachmentInline]
+    fieldsets = (
+        ('Informações', {
+            'fields': ('title', 'stage', 'activity')
+        }),
+        ('Descrição', {
+            'fields': ('description',)
+        }),
+        ('Metadados', {
+            'fields': ('created_by', 'id', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(StageRecordAttachment)
+class StageRecordAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('filename', 'record', 'uploaded_by', 'created_at')
+    search_fields = ('filename', 'description', 'record__title')
+    list_filter = ('created_at',)
+    readonly_fields = ('id', 'created_at')

@@ -14,7 +14,7 @@ from .models import (
     Stage, Activity, OpportunityHistory, StageHistory, ActivityHistory,
     OpportunityParticipant, Notification, ActivityComment,
     ActivityAttachment, OpportunityDocument, OpportunityCustomValue,
-    OpportunityStatus
+    OpportunityStatus, StageRecord, StageRecordAttachment
 )
 from .utils import get_user_context, permission_required, permissions_required_all
 from .notifications import (
@@ -464,9 +464,18 @@ def opportunity_detail(request, pk):
     ).select_related('activity', 'changed_by')
 
     context = get_user_context(request.user)
+    
+    # Prefetch stages com registros e anexos para performance
+    from django.db.models import Prefetch
+    stages = opportunity.stages.all().order_by('order').prefetch_related(
+        Prefetch('records', queryset=StageRecord.objects.select_related('activity', 'created_by').prefetch_related('attachments')),
+        'activities__assigned_to',
+        'activities__meeting'
+    )
+    
     context.update({
         'opportunity': opportunity,
-        'stages': opportunity.stages.all().order_by('order'),
+        'stages': stages,
         'history': opportunity.history.all()[:10],
         'activity_history': activity_history,
         'available_users': available_users,
@@ -2086,3 +2095,170 @@ def search_global(request):
         'results': results,
         'query': query
     })
+
+
+# ============================================================================
+# REGISTROS DE HISTÓRICO DA EQUIPE
+# ============================================================================
+
+@login_required(login_url='account_login')
+@permission_required('Criar Atividades')
+def stage_record_create(request, stage_pk):
+    """Criar novo registro de histórico para uma etapa"""
+    context = get_user_context(request.user)
+    stage = get_object_or_404(Stage, pk=stage_pk)
+    opportunity = stage.opportunity
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        activity_id = request.POST.get('activity')
+
+        if not title or not description:
+            messages.error(request, 'Título e descrição são obrigatórios.')
+            return redirect('prospecta:stage_record_create', stage_pk=stage_pk)
+
+        # Buscar atividade relacionada, se selecionada
+        activity = None
+        if activity_id:
+            activity = Activity.objects.filter(pk=activity_id, stage=stage).first()
+
+        # Criar o registro
+        record = StageRecord.objects.create(
+            stage=stage,
+            activity=activity,
+            title=title,
+            description=description,
+            created_by=request.user
+        )
+
+        # Processar anexos
+        files = request.FILES.getlist('attachments')
+        for file in files:
+            StageRecordAttachment.objects.create(
+                record=record,
+                file=file,
+                filename=file.name,
+                uploaded_by=request.user
+            )
+
+        messages.success(request, f'Registro "{title}" criado com sucesso!')
+        return redirect('prospecta:opportunity_detail', pk=opportunity.pk)
+
+    # Atividades da etapa para o select
+    activities = stage.activities.all()
+
+    context.update({
+        'stage': stage,
+        'opportunity': opportunity,
+        'activities': activities,
+    })
+    return render(request, 'prospecta/stages/record_form.html', context)
+
+
+@login_required(login_url='account_login')
+@permission_required('Editar Atividades')
+def stage_record_update(request, pk):
+    """Editar um registro de histórico existente"""
+    context = get_user_context(request.user)
+    record = get_object_or_404(StageRecord, pk=pk)
+    stage = record.stage
+    opportunity = stage.opportunity
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        activity_id = request.POST.get('activity')
+
+        if not title or not description:
+            messages.error(request, 'Título e descrição são obrigatórios.')
+            return redirect('prospecta:stage_record_update', pk=pk)
+
+        # Buscar atividade relacionada, se selecionada
+        activity = None
+        if activity_id:
+            activity = Activity.objects.filter(pk=activity_id, stage=stage).first()
+
+        record.title = title
+        record.description = description
+        record.activity = activity
+        record.save()
+
+        # Processar novos anexos
+        files = request.FILES.getlist('attachments')
+        for file in files:
+            StageRecordAttachment.objects.create(
+                record=record,
+                file=file,
+                filename=file.name,
+                uploaded_by=request.user
+            )
+
+        messages.success(request, f'Registro "{title}" atualizado com sucesso!')
+        return redirect('prospecta:opportunity_detail', pk=opportunity.pk)
+
+    # Atividades da etapa para o select
+    activities = stage.activities.all()
+
+    context.update({
+        'record': record,
+        'stage': stage,
+        'opportunity': opportunity,
+        'activities': activities,
+    })
+    return render(request, 'prospecta/stages/record_form.html', context)
+
+
+@login_required(login_url='account_login')
+@permission_required('Excluir Atividades')
+def stage_record_delete(request, pk):
+    """Deletar um registro de histórico"""
+    context = get_user_context(request.user)
+    record = get_object_or_404(StageRecord, pk=pk)
+    opportunity = record.stage.opportunity
+
+    if request.method == 'POST':
+        title = record.title
+        record.delete()
+        messages.success(request, f'Registro "{title}" excluído com sucesso!')
+        return redirect('prospecta:opportunity_detail', pk=opportunity.pk)
+
+    context.update({
+        'record': record,
+        'opportunity': opportunity,
+    })
+    return render(request, 'prospecta/stages/record_confirm_delete.html', context)
+
+
+@login_required(login_url='account_login')
+@permission_required('Excluir Atividades')
+def stage_record_attachment_delete(request, pk):
+    """Deletar um anexo de registro"""
+    attachment = get_object_or_404(StageRecordAttachment, pk=pk)
+    record = attachment.record
+    opportunity = record.stage.opportunity
+
+    if request.method == 'POST':
+        attachment.file.delete()  # Deleta o arquivo físico
+        attachment.delete()
+        messages.success(request, 'Anexo excluído com sucesso!')
+
+    return redirect('prospecta:stage_record_update', pk=record.pk)
+
+
+@login_required(login_url='account_login')
+def stage_record_attachment_download(request, pk):
+    """Download de anexo de registro"""
+    attachment = get_object_or_404(StageRecordAttachment, pk=pk)
+    import os
+    from django.http import FileResponse
+
+    file_path = attachment.file.path
+    if os.path.exists(file_path):
+        response = FileResponse(open(file_path, 'rb'))
+        response['Content-Disposition'] = f'attachment; filename="{attachment.filename}"'
+        return response
+    else:
+        messages.error(request, 'Arquivo não encontrado.')
+        return redirect('prospecta:opportunity_detail', pk=attachment.record.stage.opportunity.pk)
+

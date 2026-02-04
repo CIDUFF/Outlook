@@ -112,6 +112,18 @@ urlpatterns = [
     path('etapas/<uuid:pk>/deletar/',
          views.stage_delete, name='stage_delete'),
 
+    # Registros de Histórico (Stage Records)
+    path('etapas/<uuid:stage_pk>/registros/criar/',
+         views.stage_record_create, name='stage_record_create'),
+    path('registros/<uuid:pk>/editar/',
+         views.stage_record_update, name='stage_record_update'),
+    path('registros/<uuid:pk>/deletar/',
+         views.stage_record_delete, name='stage_record_delete'),
+    path('registros/anexos/<uuid:pk>/deletar/',
+         views.stage_record_attachment_delete, name='stage_record_attachment_delete'),
+    path('registros/anexos/<uuid:pk>/download/',
+         views.stage_record_attachment_download, name='stage_record_attachment_download'),
+
     # Contacts
     path('contatos/', views.contacts_list, name='contacts_list'),
     path('contatos/criar/<uuid:client_pk>/',
