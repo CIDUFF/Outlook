@@ -158,11 +158,11 @@
             <!-- Botões de Ação -->
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <a href="{% url 'prospecta:opportunity_detail' pk=opportunity.pk %}" 
-                   class="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium">
+                   class="px-6 py-3 text-gray-700 bg-gray-200 border border-gray-300 rounded-lg hover:bg-gray-300 transition font-medium">
                     Cancelar
                 </a>
                 <button type="submit" 
-                        class="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-medium">
+                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-md">
                     <i class="fas fa-save mr-2"></i>
                     {% if record %}Salvar Alterações{% else %}Criar Registro{% endif %}
                 </button>

@@ -476,7 +476,6 @@ def opportunity_detail(request, pk):
     context.update({
         'opportunity': opportunity,
         'stages': stages,
-        'history': opportunity.history.all()[:10],
         'activity_history': activity_history,
         'available_users': available_users,
         'opportunity_activity_count': opportunity_activity_count,
@@ -1181,6 +1180,8 @@ def activity_create(request, stage_pk):
 
     if request.method == 'POST':
         assigned_to_id = request.POST.get('assigned_to') or None
+        priority_order = request.POST.get('priority_order')
+        priority_order = int(priority_order) if priority_order else None
 
         activity = Activity(
             stage=stage,
@@ -1193,6 +1194,7 @@ def activity_create(request, stage_pk):
             start_date=request.POST.get('start_date') or None,
             expected_date=request.POST.get('expected_date') or None,
             assigned_at=timezone.now() if assigned_to_id else None,
+            priority_order=priority_order,
         )
         activity.save()
 
@@ -1235,6 +1237,8 @@ def activity_update(request, pk):
 
     if request.method == 'POST':
         new_assigned_to_id = request.POST.get('assigned_to') or None
+        priority_order = request.POST.get('priority_order')
+        priority_order = int(priority_order) if priority_order else None
 
         activity.title = request.POST['title']
         activity.description = request.POST.get('description', '')
@@ -1244,6 +1248,7 @@ def activity_update(request, pk):
         activity.start_date = request.POST.get('start_date') or None
         activity.expected_date = request.POST.get('expected_date') or None
         activity.status = request.POST.get('status', activity.status)
+        activity.priority_order = priority_order
 
         # Verificar se houve mudança de atribuição
         old_assigned_to_id = old_assigned_to.id if old_assigned_to else None

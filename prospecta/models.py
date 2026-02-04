@@ -376,6 +376,9 @@ class Activity(models.Model):
         related_name='activities', verbose_name='Reunião Associada')
     entregavel = models.CharField(
         max_length=255, blank=True, null=True, verbose_name='Entregável')
+    priority_order = models.IntegerField(
+        blank=True, null=True, verbose_name='Ordem de Prioridade',
+        help_text='Ordem de prioridade da atividade dentro da etapa (menor número = maior prioridade)')
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(
@@ -385,6 +388,7 @@ class Activity(models.Model):
         db_table = 'tab_activities'
         verbose_name = 'Atividade'
         verbose_name_plural = 'Atividades'
+        ordering = ['priority_order', 'created_at']
 
     def __str__(self):
         return self.title
